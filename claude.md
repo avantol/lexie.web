@@ -10,7 +10,7 @@ Amateur radio real-time dashboard that monitors global propagation spots. Connec
 - **Server:** Built-in `http` module + `ws` (WebSocket) + `@stomp/stompjs`
 - **Frontend:** Vanilla JS, CSS3, no frameworks — single-page app entirely in `index.html`
 - **Packaging:** `pkg` for standalone binaries
-- **Deployment:** Node.js server or Vercel (MQTT variant)
+- **Deployment:** Static file (index.html connects directly to g7vrd STOMP from browser) or Node.js server (server.js proxies STOMP → WebSocket)
 
 ## File Map
 
@@ -28,6 +28,18 @@ Amateur radio real-time dashboard that monitors global propagation spots. Connec
 
 ## Architecture
 
+### Standalone (index.html — Vercel, any static host)
+
+```
+g7vrd STOMP Feed (wss://ws.g7vrd.co.uk/dx/websocket)
+    ↓ 4 topics: /topic/psks/v1, spots/v1, skims/v1, wsprs/v1
+index.html (browser STOMP client → parse → lookupCountry via inlined prefixMap → render)
+```
+
+`index.html` connects directly to the g7vrd STOMP broker from the browser using `@stomp/stompjs` (CDN). Country resolution uses the inlined `prefixMap` + `lookupCountry` (from `dxcc.js`). Mode inference for DX cluster spots uses `inferMode` (from `server.js`). No server required.
+
+### Server mode (server.js — local dev, Node.js host)
+
 ```
 g7vrd STOMP Feed (wss://ws.g7vrd.co.uk/dx/websocket)
     ↓ 4 topics: /topic/psks/v1, spots/v1, skims/v1, wsprs/v1
@@ -35,6 +47,8 @@ server.js (STOMP client → parse → enrich via cty-lookup → broadcast)
     ↓ WebSocket (JSON: {type, callsign, country, mode, band, grid, ...})
 index.html (filter by mode/band → render cards + live feed + TTS/ARIA)
 ```
+
+Server mode uses `cty-lookup.js` (parses `cty.dat`) for more accurate callsign resolution including exact matches and zone overrides. The standalone mode uses the simpler `prefixMap` which covers common prefixes but lacks exact callsign matches.
 
 ## Commands
 
