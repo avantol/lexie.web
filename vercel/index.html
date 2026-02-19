@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Lexie - WSJT-X Country Spotter</title>
-  <script src="https://unpkg.com/mqtt@5/dist/mqtt.min.js"></script>
+  <title>Lexie - DX Country Spotter v0.1</title>
+  <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.3.0/bundles/stomp.umd.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -18,51 +18,18 @@
     header {
       background: linear-gradient(135deg, #1a1f35, #0d1220);
       border-bottom: 1px solid #2a3a5c;
-      padding: 12px 24px;
+      padding: 16px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 8px;
+      gap: 12px;
     }
 
     header h1 {
       font-size: 1.4rem;
       font-weight: 600;
       color: #7eb8ff;
-    }
-
-    .header-controls {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
-
-    .control-group {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .control-group label {
-      font-size: 0.8rem;
-      color: #8899bb;
-    }
-
-    .control-group select {
-      background: #1a2240;
-      color: #e0e0e0;
-      border: 1px solid #2a3a5c;
-      border-radius: 4px;
-      padding: 4px 8px;
-      font-size: 0.8rem;
-      cursor: pointer;
-    }
-
-    .control-group select:focus {
-      outline: 2px solid #4a8aff;
-      outline-offset: 1px;
     }
 
     .status {
@@ -82,17 +49,58 @@
 
     .status-dot.connected { background: #44ff88; }
 
-    button.test-btn {
-      background: #2a3a5c;
+    .voice-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .voice-controls label {
+      font-size: 0.85rem;
+      color: #8899bb;
+    }
+
+    .voice-controls select {
+      background: #1a2240;
       color: #e0e0e0;
-      border: 1px solid #3a4a6c;
+      border: 1px solid #2a3a5c;
       border-radius: 4px;
-      padding: 4px 10px;
+      padding: 4px 8px;
       font-size: 0.8rem;
       cursor: pointer;
     }
 
-    button.test-btn:hover { background: #3a4a6c; }
+    .voice-controls select:focus {
+      outline: 2px solid #4a8aff;
+      outline-offset: 1px;
+    }
+
+    .qth-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .qth-controls label {
+      font-size: 0.85rem;
+      color: #8899bb;
+    }
+
+    .qth-controls select {
+      background: #1a2240;
+      color: #e0e0e0;
+      border: 1px solid #2a3a5c;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .qth-controls select:focus,
+    .qth-controls input:focus {
+      outline: 2px solid #4a8aff;
+      outline-offset: 1px;
+    }
 
     .sr-only {
       position: absolute;
@@ -106,24 +114,86 @@
       border: 0;
     }
 
-    .stats {
+    .mode-filters {
       display: flex;
-      gap: 24px;
+      gap: 8px;
       padding: 10px 24px;
       background: #0d1220;
       border-bottom: 1px solid #1a2540;
-      font-size: 0.9rem;
       flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .mode-filters span {
+      font-size: 0.8rem;
+      color: #667799;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-right: 4px;
+    }
+
+    .mode-btn {
+      background: #1a2240;
+      color: #667799;
+      border: 1px solid #2a3a5c;
+      border-radius: 4px;
+      padding: 4px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mode-btn:hover {
+      border-color: #4a6a9c;
+      color: #8899bb;
+    }
+
+    .mode-btn.active {
+      background: #2a3a5c;
+      color: #7eb8ff;
+      border-color: #4a8aff;
+    }
+
+    .stats {
+      display: flex;
+      gap: 16px;
+      padding: 10px 24px;
+      background: #0d1220;
+      border-bottom: 1px solid #1a2540;
+      font-size: 0.85rem;
+      flex-wrap: wrap;
+      align-items: center;
     }
 
     .stat { color: #8899bb; }
-    .stat strong { color: #7eb8ff; font-size: 1.1rem; }
+    .stat strong { color: #7eb8ff; font-size: 1rem; }
+
+    .mode-totals {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-left: 8px;
+      padding-left: 12px;
+      border-left: 1px solid #1a2540;
+    }
+
+    .mode-total {
+      font-size: 0.75rem;
+      color: #667799;
+    }
+
+    .mode-total strong {
+      color: #aabbdd;
+      font-size: 0.8rem;
+    }
 
     .container {
       display: grid;
       grid-template-columns: 1fr 380px;
       gap: 0;
-      height: calc(100vh - 110px);
+      height: calc(100vh - 190px);
     }
 
     .countries-panel {
@@ -155,6 +225,11 @@
       animation: fadeIn 0.4s ease-out;
     }
 
+    .country-card:focus {
+      outline: 2px solid #7eb8ff;
+      outline-offset: 2px;
+    }
+
     .country-card.highlight {
       border-color: #4a8aff;
       box-shadow: 0 0 16px rgba(74, 138, 255, 0.3);
@@ -182,6 +257,81 @@
       font-weight: 600;
       margin-left: 6px;
     }
+
+    .country-card .card-body {
+      display: flex;
+      gap: 8px;
+      margin-top: 5px;
+    }
+
+    .country-card .card-main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .country-card .band-col {
+      display: grid;
+      grid-template-rows: repeat(3, auto);
+      grid-auto-flow: column;
+      gap: 1px;
+      flex-shrink: 0;
+      align-content: start;
+      border-left: 1px solid #2a3a5c;
+      padding-left: 8px;
+    }
+
+    .country-card .band-pill {
+      font-size: 0.6rem;
+      font-weight: 600;
+      padding: 0 5px;
+      border-radius: 2px;
+      color: #8cb4e0;
+      background: #1a2a4a;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    .country-card .callsign-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .country-card .callsign-entry {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.75rem;
+    }
+
+    .country-card .callsign-entry .call {
+      color: #ffcc44;
+      font-family: monospace;
+      font-weight: 500;
+    }
+
+    .country-card .callsign-entry .mode-pill {
+      font-size: 0.55rem;
+      font-weight: 600;
+      padding: 0 4px;
+      border-radius: 2px;
+      color: #e0e0e0;
+      background: #2a3a5c;
+    }
+
+    .mode-pill.mode-ft8 { background: #2d5a1e; }
+    .mode-pill.mode-ft4 { background: #1e4a5a; }
+    .mode-pill.mode-cw { background: #5a3a1e; }
+    .mode-pill.mode-ssb { background: #5a1e3a; }
+    .mode-pill.mode-rtty { background: #3a1e5a; }
+    .mode-pill.mode-psk { background: #1e3a5a; }
+    .mode-pill.mode-varac { background: #4a3a1e; }
+    .mode-pill.mode-jt65 { background: #1e5a3a; }
+    .mode-pill.mode-q65 { background: #3a5a1e; }
+    .mode-pill.mode-js8 { background: #1e3a3a; }
+    .mode-pill.mode-wspr { background: #5a1e5a; }
+    .mode-pill.mode-msk144 { background: #3a3a1e; }
+    .mode-pill.mode-freedv { background: #2a4a3a; }
 
     .feed-panel {
       background: #0d1220;
@@ -233,16 +383,21 @@
       font-weight: 500;
     }
 
-    .feed-item .band-tag {
-      font-size: 0.7rem;
-      color: #44ddaa;
-      font-family: monospace;
+    .feed-item .mode-tag {
+      font-size: 0.65rem;
+      color: #0a0e17;
+      background: #667799;
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-weight: 600;
+      margin-left: 6px;
     }
 
-    .feed-item .snr-tag {
-      font-size: 0.7rem;
-      color: #888;
+    .feed-item .message {
+      font-size: 0.75rem;
+      color: #556688;
       font-family: monospace;
+      margin-top: 2px;
     }
 
     .empty-state {
@@ -281,399 +436,786 @@
   </style>
 </head>
 <body>
-  <header>
-    <h1>Lexie - WSJT-X Country Spotter</h1>
-    <div class="header-controls">
-      <div class="control-group">
-        <label for="bandSelect">Band:</label>
-        <select id="bandSelect" aria-label="Band filter">
-          <option value="all">All bands</option>
-          <option value="160m">160m</option>
-          <option value="80m">80m</option>
-          <option value="60m">60m</option>
-          <option value="40m">40m</option>
-          <option value="30m">30m</option>
-          <option value="20m" selected>20m</option>
-          <option value="17m">17m</option>
-          <option value="15m">15m</option>
-          <option value="12m">12m</option>
-          <option value="10m">10m</option>
-          <option value="6m">6m</option>
-          <option value="2m">2m</option>
-        </select>
-      </div>
-      <div class="control-group">
-        <label for="modeSelect">Mode:</label>
-        <select id="modeSelect" aria-label="Mode filter">
-          <option value="all">All modes</option>
-          <option value="FT8" selected>FT8</option>
-          <option value="FT4">FT4</option>
-          <option value="WSPR">WSPR</option>
-          <option value="JS8">JS8</option>
-          <option value="MSK144">MSK144</option>
-        </select>
-      </div>
-      <div class="control-group">
-        <label for="voiceMode">Announce:</label>
-        <select id="voiceMode" aria-label="Voice announcement mode">
-          <option value="off">Off</option>
-          <option value="self-voice">Self-voice (TTS)</option>
-          <option value="screen-reader">Screen reader</option>
-        </select>
-        <button class="test-btn" id="testVoice" aria-label="Test voice announcement">Test</button>
-      </div>
-      <div class="status">
-        <div class="status-dot" id="statusDot" role="status" aria-label="Connection status"></div>
-        <span id="statusText">Disconnected</span>
-      </div>
+  <header role="banner">
+    <h1>Lexie - DX Country Spotter v0.1</h1>
+    <div class="voice-controls" role="group" aria-label="Voice announcement controls">
+      <label for="voiceMode">Announce:</label>
+      <select id="voiceMode" aria-label="Voice announcement mode">
+        <option value="off">Off</option>
+        <option value="self-voice">Self-voice (TTS)</option>
+        <option value="screen-reader">Screen reader</option>
+      </select>
+      <button id="testVoice" aria-label="Test voice announcement"
+        style="background:#2a3a5c; color:#e0e0e0; border:1px solid #3a4a6c; border-radius:4px;
+               padding:4px 10px; font-size:0.8rem; cursor:pointer;">Test</button>
+    </div>
+    <div class="qth-controls" role="group" aria-label="QTH and sort controls">
+      <label for="qthInput">QTH:</label>
+      <input type="text" id="qthInput" maxlength="4" placeholder="EM09" value="EM09"
+        aria-label="Your QTH Maidenhead grid locator"
+        style="background:#1a2240; color:#e0e0e0; border:1px solid #2a3a5c; border-radius:4px;
+               padding:4px 8px; font-size:0.8rem; width:55px; text-transform:uppercase; font-family:monospace;">
+      <label for="sortMode">Sort:</label>
+      <select id="sortMode" aria-label="Card sort order">
+        <option value="alpha">A-Z</option>
+        <option value="spots">Least spots</option>
+        <option value="mostspots">Most spots</option>
+        <option value="closest">Closest</option>
+        <option value="distance">Most distant</option>
+      </select>
+    </div>
+    <div class="status">
+      <div class="status-dot" id="statusDot" role="status" aria-label="Connection status"></div>
+      <span id="statusText">Disconnected</span>
     </div>
   </header>
 
-  <div id="srAnnounce" class="sr-only" aria-live="polite" aria-atomic="true" role="log"
-       aria-label="New country announcements"></div>
+  <!-- ARIA live region for screen reader announcements -->
+  <div id="srAnnounce" class="sr-only" aria-live="polite" aria-atomic="true" role="status"></div>
 
-  <div class="stats">
-    <div class="stat">Countries: <strong id="countryCount">0</strong></div>
-    <div class="stat">Callsigns: <strong id="callsignCount">0</strong></div>
-    <div class="stat">Spots: <strong id="messageCount">0</strong></div>
+  <div class="mode-filters" role="toolbar" aria-label="Mode filters">
+    <span>Modes:</span>
+    <button class="mode-btn active" data-mode="FT8" aria-pressed="true" aria-label="Filter FT8 mode">FT8</button>
+    <button class="mode-btn active" data-mode="FT4" aria-pressed="true" aria-label="Filter FT4 mode">FT4</button>
+    <button class="mode-btn active" data-mode="FT2" aria-pressed="true" aria-label="Filter FT2 mode">FT2</button>
+    <button class="mode-btn active" data-mode="CW" aria-pressed="true" aria-label="Filter CW mode">CW</button>
+    <button class="mode-btn active" data-mode="SSB" aria-pressed="true" aria-label="Filter SSB mode">SSB</button>
+    <button class="mode-btn active" data-mode="RTTY" aria-pressed="true" aria-label="Filter RTTY mode">RTTY</button>
+    <button class="mode-btn active" data-mode="PSK" aria-pressed="true" aria-label="Filter PSK mode">PSK</button>
+    <button class="mode-btn active" data-mode="VARAC" aria-pressed="true" aria-label="Filter VARAC mode">VARAC</button>
+    <button class="mode-btn active" data-mode="JT65" aria-pressed="true" aria-label="Filter JT65 mode">JT65</button>
+    <button class="mode-btn active" data-mode="Q65" aria-pressed="true" aria-label="Filter Q65 mode">Q65</button>
+    <button class="mode-btn active" data-mode="JS8" aria-pressed="true" aria-label="Filter JS8 mode">JS8</button>
+    <button class="mode-btn active" data-mode="WSPR" aria-pressed="true" aria-label="Filter WSPR mode">WSPR</button>
+    <button class="mode-btn active" data-mode="MSK144" aria-pressed="true" aria-label="Filter MSK144 mode">MSK144</button>
+    <button class="mode-btn active" data-mode="FREEDV" aria-pressed="true" aria-label="Filter FreeDV mode">FreeDV</button>
   </div>
 
-  <div class="container">
-    <div class="countries-panel">
-      <h2>Countries Spotted</h2>
-      <div class="country-grid" id="countryGrid" role="list" aria-label="Countries spotted">
+  <div class="mode-filters" role="toolbar" aria-label="Band filters">
+    <span>Bands:</span>
+    <button class="mode-btn active" data-band="160m" aria-pressed="true" aria-label="Filter 160 meter band">160m</button>
+    <button class="mode-btn active" data-band="80m" aria-pressed="true" aria-label="Filter 80 meter band">80m</button>
+    <button class="mode-btn active" data-band="60m" aria-pressed="true" aria-label="Filter 60 meter band">60m</button>
+    <button class="mode-btn active" data-band="40m" aria-pressed="true" aria-label="Filter 40 meter band">40m</button>
+    <button class="mode-btn active" data-band="30m" aria-pressed="true" aria-label="Filter 30 meter band">30m</button>
+    <button class="mode-btn active" data-band="20m" aria-pressed="true" aria-label="Filter 20 meter band">20m</button>
+    <button class="mode-btn active" data-band="17m" aria-pressed="true" aria-label="Filter 17 meter band">17m</button>
+    <button class="mode-btn active" data-band="15m" aria-pressed="true" aria-label="Filter 15 meter band">15m</button>
+    <button class="mode-btn active" data-band="12m" aria-pressed="true" aria-label="Filter 12 meter band">12m</button>
+    <button class="mode-btn active" data-band="10m" aria-pressed="true" aria-label="Filter 10 meter band">10m</button>
+    <button class="mode-btn active" data-band="6m" aria-pressed="true" aria-label="Filter 6 meter band">6m</button>
+  </div>
+
+  <div class="stats" role="region" aria-label="Spot statistics">
+    <div class="stat" aria-label="Countries heard">Countries: <strong id="countryCount">0</strong></div>
+    <div class="stat" aria-label="Unique callsigns">Callsigns: <strong id="callsignCount">0</strong></div>
+    <div class="stat" aria-label="Total spots">Spots: <strong id="spotCount">0</strong></div>
+    <div class="mode-totals" id="modeTotals" aria-label="Spots per mode"></div>
+  </div>
+
+  <div class="container" role="main" aria-label="DX Country Spotter">
+    <div class="countries-panel" role="region" aria-label="Countries heard panel">
+      <h2>Countries Heard</h2>
+      <div class="country-grid" id="countryGrid" aria-label="Countries heard">
         <div class="empty-state" id="emptyState">
-          <h3>Connecting to PSKReporter...</h3>
-          <p>Live spots will appear as they are reported worldwide</p>
+          <h3>Waiting for spots...</h3>
+          <p>Select modes above and spots will appear from the g7vrd live feed</p>
         </div>
       </div>
     </div>
 
-    <div class="feed-panel">
+    <div class="feed-panel" role="region" aria-label="Live spot feed panel" tabindex="-1">
       <h2>Live Feed</h2>
-      <div class="feed-list" id="feedList" role="log" aria-label="Live spot feed" aria-relevant="additions"></div>
+      <div class="feed-list" id="feedList" role="log" aria-live="off" aria-label="Live spot feed" tabindex="-1"></div>
     </div>
   </div>
 
   <script>
-    // --- DXCC prefix-to-country map (inlined) ---
+    console.log('=== Lexie v0.1 STOMP direct mode ===');
+    // --- DXCC prefix-to-country lookup (inlined from dxcc.js) ---
     const prefixMap = {
-      'K':'United States','W':'United States','N':'United States','AA':'United States','AB':'United States',
-      'AC':'United States','AD':'United States','AE':'United States','AF':'United States','AG':'United States',
-      'AH':'United States','AI':'United States','AJ':'United States','AK':'United States','AL':'United States',
-      'KA':'United States','KB':'United States','KC':'United States','KD':'United States','KE':'United States',
-      'KF':'United States','KG':'United States','KH':'United States','KI':'United States','KJ':'United States',
-      'KK':'United States','KL':'United States','KM':'United States','KN':'United States','KO':'United States',
-      'KP':'United States','KQ':'United States','KR':'United States','KS':'United States','KT':'United States',
-      'KU':'United States','KV':'United States','KW':'United States','KX':'United States','KY':'United States',
-      'KZ':'United States','NA':'United States','NB':'United States','NC':'United States','ND':'United States',
-      'NE':'United States','NF':'United States','NG':'United States','NH':'United States','NI':'United States',
-      'NJ':'United States','NK':'United States','NL':'United States','NM':'United States','NN':'United States',
-      'NO':'United States','NP':'United States','NQ':'United States','NR':'United States','NS':'United States',
-      'NT':'United States','NU':'United States','NV':'United States','NW':'United States','NX':'United States',
-      'NY':'United States','NZ':'United States','WA':'United States','WB':'United States','WC':'United States',
-      'WD':'United States','WE':'United States','WF':'United States','WG':'United States','WH':'United States',
-      'WI':'United States','WJ':'United States','WK':'United States','WL':'United States','WM':'United States',
-      'WN':'United States','WO':'United States','WP':'United States','WQ':'United States','WR':'United States',
-      'WS':'United States','WT':'United States','WU':'United States','WV':'United States','WW':'United States',
-      'WX':'United States','WY':'United States','WZ':'United States',
-      'KH0':'Mariana Islands','KH1':'Baker & Howland Islands','KH2':'Guam',
-      'KH3':'Johnston Island','KH4':'Midway Island','KH5':'Palmyra & Jarvis Islands',
-      'KH6':'Hawaii','KH7':'Kure Island','KH8':'American Samoa','KH9':'Wake Island',
-      'KL7':'Alaska','KP1':'Navassa Island','KP2':'US Virgin Islands',
-      'KP3':'Puerto Rico','KP4':'Puerto Rico','KP5':'Desecheo Island',
-      'AH0':'Mariana Islands','AH2':'Guam','AH6':'Hawaii','AH8':'American Samoa',
-      'AL7':'Alaska','WH6':'Hawaii','WL7':'Alaska','WP4':'Puerto Rico',
-      'NH6':'Hawaii','NL7':'Alaska','NP4':'Puerto Rico',
-      'VA':'Canada','VB':'Canada','VC':'Canada','VD':'Canada','VE':'Canada',
-      'VF':'Canada','VG':'Canada','VO':'Canada','VX':'Canada','VY':'Canada',
-      'CY':'Canada','CZ':'Canada','CF':'Canada','CG':'Canada','CH':'Canada',
-      'CI':'Canada','CJ':'Canada','CK':'Canada',
-      'XA':'Mexico','XB':'Mexico','XC':'Mexico','XD':'Mexico','XE':'Mexico',
-      'XF':'Mexico','4A':'Mexico','4B':'Mexico','4C':'Mexico','6D':'Mexico',
-      '6E':'Mexico','6F':'Mexico','6G':'Mexico','6H':'Mexico',
-      'G':'England','GD':'Isle of Man','GI':'Northern Ireland','GJ':'Jersey',
-      'GM':'Scotland','GU':'Guernsey','GW':'Wales','M':'England',
-      '2E':'England','2D':'Isle of Man','2I':'Northern Ireland','2J':'Jersey',
-      '2M':'Scotland','2U':'Guernsey','2W':'Wales',
-      'F':'France','HW':'France','HX':'France','HY':'France','TH':'France',
-      'TM':'France','TO':'France','TP':'France','TQ':'France','TV':'France',
-      'DL':'Germany','DA':'Germany','DB':'Germany','DC':'Germany','DD':'Germany',
-      'DE':'Germany','DF':'Germany','DG':'Germany','DH':'Germany','DI':'Germany',
-      'DJ':'Germany','DK':'Germany','DM':'Germany','DN':'Germany','DO':'Germany',
-      'DP':'Germany','DQ':'Germany','DR':'Germany',
-      'I':'Italy','IA':'Italy','IB':'Italy','IC':'Italy','ID':'Italy',
-      'IE':'Italy','IF':'Italy','IG':'Italy','IH':'Italy','II':'Italy',
-      'IJ':'Italy','IK':'Italy','IL':'Italy','IM':'Italy','IN':'Italy',
-      'IO':'Italy','IP':'Italy','IQ':'Italy','IR':'Italy','IS':'Italy',
-      'IT':'Italy','IU':'Italy','IV':'Italy','IW':'Italy','IX':'Italy',
-      'IY':'Italy','IZ':'Italy',
-      'EA':'Spain','EB':'Spain','EC':'Spain','ED':'Spain','EE':'Spain',
-      'EF':'Spain','EG':'Spain','EH':'Spain',
-      'EA6':'Balearic Islands','EA8':'Canary Islands','EA9':'Ceuta & Melilla',
-      'CT':'Portugal','CU':'Azores','CS':'Portugal',
-      'PA':'Netherlands','PB':'Netherlands','PC':'Netherlands','PD':'Netherlands',
-      'PE':'Netherlands','PF':'Netherlands','PG':'Netherlands','PH':'Netherlands',
-      'PI':'Netherlands',
-      'ON':'Belgium','OO':'Belgium','OP':'Belgium','OQ':'Belgium','OR':'Belgium',
-      'OS':'Belgium','OT':'Belgium',
-      'HB':'Switzerland','HB0':'Liechtenstein','HE':'Switzerland',
-      'OE':'Austria',
-      'OZ':'Denmark','OU':'Denmark','OV':'Denmark','OW':'Denmark','OX':'Greenland',
-      'XP':'Greenland','OY':'Faroe Islands',
-      'SM':'Sweden','SA':'Sweden','SB':'Sweden','SC':'Sweden','SD':'Sweden',
-      'SE':'Sweden','SF':'Sweden','SG':'Sweden','SH':'Sweden','SI':'Sweden',
-      'SJ':'Sweden','SK':'Sweden','SL':'Sweden','7S':'Sweden',
-      'LA':'Norway','LB':'Norway','LC':'Norway','LD':'Norway','LE':'Norway',
-      'LF':'Norway','LG':'Norway','LH':'Norway','LI':'Norway','LJ':'Norway',
-      'LK':'Norway','LL':'Norway','LM':'Norway','LN':'Norway',
-      'JW':'Svalbard','JX':'Jan Mayen',
-      'OH':'Finland','OF':'Finland','OG':'Finland','OI':'Finland',
-      'OH0':'Aland Islands',
-      'SP':'Poland','SN':'Poland','SO':'Poland','SQ':'Poland','SR':'Poland',
-      '3Z':'Poland','HF':'Poland',
-      'OK':'Czech Republic','OL':'Czech Republic',
-      'HA':'Hungary','HG':'Hungary',
-      'YO':'Romania','YP':'Romania','YQ':'Romania','YR':'Romania',
-      'LZ':'Bulgaria',
-      'YU':'Serbia','YT':'Serbia',
-      'Z3':'North Macedonia',
-      '9A':'Croatia',
-      'S5':'Slovenia',
-      'E7':'Bosnia-Herzegovina',
-      '4O':'Montenegro',
-      'ZA':'Albania',
-      'SV':'Greece','SW':'Greece','SX':'Greece','SY':'Greece','SZ':'Greece',
-      'J4':'Greece',
-      'SV5':'Dodecanese','SV9':'Crete',
-      'TA':'Turkey','TB':'Turkey','TC':'Turkey',
-      'YL':'Latvia',
-      'LY':'Lithuania',
-      'ES':'Estonia',
-      'UR':'Ukraine','US':'Ukraine','UT':'Ukraine','UU':'Ukraine','UV':'Ukraine',
-      'UW':'Ukraine','UX':'Ukraine','UY':'Ukraine','UZ':'Ukraine',
-      'EU':'Belarus','EV':'Belarus','EW':'Belarus',
-      'ER':'Moldova',
-      'UA':'Russia','UB':'Russia','UC':'Russia','UD':'Russia','UE':'Russia',
-      'UF':'Russia','UG':'Russia','UH':'Russia','UI':'Russia',
-      'RA':'Russia','RB':'Russia','RC':'Russia','RD':'Russia','RE':'Russia',
-      'RF':'Russia','RG':'Russia','RH':'Russia','RI':'Russia','RJ':'Russia',
-      'RK':'Russia','RL':'Russia','RM':'Russia','RN':'Russia','RO':'Russia',
-      'RP':'Russia','RQ':'Russia','RR':'Russia','RS':'Russia','RT':'Russia',
-      'RU':'Russia','RV':'Russia','RW':'Russia','RX':'Russia','RY':'Russia',
-      'RZ':'Russia','R':'Russia','U':'Russia',
-      'UA2':'Kaliningrad',
-      'EI':'Ireland','EJ':'Ireland',
-      'TF':'Iceland',
-      'LX':'Luxembourg',
-      '9H':'Malta',
-      '4U1V':'Vienna Intl Centre',
-      'JY':'Jordan',
-      'LU':'Argentina','LO':'Argentina','LP':'Argentina','LQ':'Argentina',
-      'LR':'Argentina','LS':'Argentina','LT':'Argentina','LV':'Argentina',
-      'LW':'Argentina','AY':'Argentina','AZ':'Argentina','L2':'Argentina',
-      'L3':'Argentina','L4':'Argentina','L5':'Argentina','L6':'Argentina',
-      'L7':'Argentina','L8':'Argentina','L9':'Argentina',
-      'PY':'Brazil','PP':'Brazil','PQ':'Brazil','PR':'Brazil','PS':'Brazil',
-      'PT':'Brazil','PU':'Brazil','PV':'Brazil','PW':'Brazil','PX':'Brazil',
-      'ZV':'Brazil','ZW':'Brazil','ZX':'Brazil','ZY':'Brazil','ZZ':'Brazil',
-      'CE':'Chile','CA':'Chile','CB':'Chile','CC':'Chile','CD':'Chile',
-      'XQ':'Chile','XR':'Chile','3G':'Chile',
-      'CE0Y':'Easter Island','CE0Z':'Juan Fernandez Islands','CE0X':'San Felix Islands',
-      'HK':'Colombia','HJ':'Colombia','5J':'Colombia','5K':'Colombia',
-      'HC':'Ecuador','HD':'Ecuador',
-      'HC8':'Galapagos Islands',
-      'OA':'Peru','OB':'Peru','OC':'Peru',
-      'YV':'Venezuela','YW':'Venezuela','YX':'Venezuela','YY':'Venezuela',
-      '4M':'Venezuela',
-      'CP':'Bolivia',
-      'ZP':'Paraguay',
-      'CX':'Uruguay','CV':'Uruguay','CW':'Uruguay',
-      '9Y':'Trinidad & Tobago',
-      '8R':'Guyana',
-      'PZ':'Suriname',
-      'PJ2':'Curacao','PJ4':'Bonaire','PJ5':'Sint Eustatius','PJ6':'Saba',
-      'PJ7':'Sint Maarten',
-      'FY':'French Guiana',
-      'HP':'Panama','H3':'Panama','HO':'Panama',
-      'TI':'Costa Rica','TE':'Costa Rica',
-      'YN':'Nicaragua','HT':'Nicaragua','H7':'Nicaragua',
-      'HR':'Honduras','HQ':'Honduras',
-      'TG':'Guatemala','TD':'Guatemala',
-      'YS':'El Salvador','HU':'El Salvador',
-      'V3':'Belize',
-      'CO':'Cuba','CM':'Cuba','CL':'Cuba','T4':'Cuba',
-      'HI':'Dominican Republic',
-      'HH':'Haiti','4V':'Haiti',
-      '6Y':'Jamaica',
-      'VP5':'Turks & Caicos Islands',
-      'VP2E':'Anguilla','VP2M':'Montserrat','VP2V':'British Virgin Islands',
-      'V2':'Antigua & Barbuda',
-      'J3':'Grenada',
-      'J6':'Saint Lucia',
-      'J7':'Dominica',
-      'J8':'Saint Vincent',
-      'V4':'Saint Kitts & Nevis',
-      '8P':'Barbados',
-      'FM':'Martinique',
-      'FG':'Guadeloupe',
-      'FS':'Saint Martin',
-      'FJ':'Saint Barthelemy',
-      'VP9':'Bermuda',
-      'ZF':'Cayman Islands',
-      'C6':'Bahamas',
-      'JA':'Japan','JB':'Japan','JC':'Japan','JD':'Japan','JE':'Japan',
-      'JF':'Japan','JG':'Japan','JH':'Japan','JI':'Japan','JJ':'Japan',
-      'JK':'Japan','JL':'Japan','JM':'Japan','JN':'Japan','JO':'Japan',
-      'JP':'Japan','JQ':'Japan','JR':'Japan','JS':'Japan',
-      '7J':'Japan','7K':'Japan','7L':'Japan','7M':'Japan','7N':'Japan',
-      '8J':'Japan','8K':'Japan','8L':'Japan','8M':'Japan','8N':'Japan',
-      'JD1':'Ogasawara',
-      'HL':'South Korea','DS':'South Korea','DT':'South Korea','6K':'South Korea',
-      '6L':'South Korea','6M':'South Korea','6N':'South Korea',
-      'BV':'Taiwan','BW':'Taiwan','BX':'Taiwan','BM':'Taiwan','BN':'Taiwan',
-      'BO':'Taiwan','BP':'Taiwan','BQ':'Taiwan',
-      'B':'China','BA':'China','BB':'China','BC':'China','BD':'China',
-      'BE':'China','BF':'China','BG':'China','BH':'China','BI':'China',
-      'BJ':'China','BK':'China','BL':'China','BR':'China','BS':'China',
-      'BT':'China','BU':'China','BY':'China','BZ':'China',
-      '3W':'Vietnam','XV':'Vietnam',
-      'HS':'Thailand','E2':'Thailand',
-      '9M2':'West Malaysia','9M4':'West Malaysia','9M6':'East Malaysia','9M8':'East Malaysia',
-      '9V':'Singapore',
-      'YB':'Indonesia','YC':'Indonesia','YD':'Indonesia','YE':'Indonesia',
-      'YF':'Indonesia','YG':'Indonesia','YH':'Indonesia',
-      '7A':'Indonesia','7B':'Indonesia','7C':'Indonesia','7D':'Indonesia',
-      '8A':'Indonesia','8B':'Indonesia','8C':'Indonesia','8D':'Indonesia',
-      'DU':'Philippines','DV':'Philippines','DW':'Philippines','DX':'Philippines',
-      'DY':'Philippines','DZ':'Philippines','4D':'Philippines','4E':'Philippines',
-      '4F':'Philippines','4G':'Philippines','4H':'Philippines','4I':'Philippines',
-      'VU':'India','VT':'India','VW':'India','8T':'India','8U':'India',
-      '8V':'India','8W':'India','8X':'India','8Y':'India',
-      'AP':'Pakistan','AQ':'Pakistan','AR':'Pakistan','AS':'Pakistan',
-      '6P':'Pakistan','6Q':'Pakistan','6R':'Pakistan','6S':'Pakistan',
-      '4S':'Sri Lanka',
-      'S2':'Bangladesh',
-      'XU':'Cambodia',
-      'XW':'Laos',
-      'XZ':'Myanmar',
-      '9N':'Nepal',
-      'A5':'Bhutan',
-      'EX':'Kyrgyzstan',
-      'EY':'Tajikistan',
-      'EZ':'Turkmenistan',
-      'UK':'Uzbekistan',
-      'UN':'Kazakhstan','UL':'Kazakhstan','UM':'Kazakhstan','UP':'Kazakhstan',
-      'UQ':'Kazakhstan',
-      'EP':'Iran','EQ':'Iran',
-      'YI':'Iraq','HN':'Iraq',
-      'OD':'Lebanon',
-      'YK':'Syria',
-      '4X':'Israel','4Z':'Israel',
-      'HZ':'Saudi Arabia','7Z':'Saudi Arabia',
-      'A4':'Oman',
-      'A6':'United Arab Emirates',
-      'A7':'Qatar',
-      'A9':'Bahrain',
-      '9K':'Kuwait',
-      'A2':'Botswana',
-      'EK':'Armenia',
-      '4J':'Azerbaijan','4K':'Azerbaijan',
-      '4L':'Georgia',
-      'T5':'Somalia',
-      'SU':'Egypt','SS':'Egypt','6A':'Egypt','6B':'Egypt',
-      '5A':'Libya',
-      '7X':'Algeria',
-      'CN':'Morocco','5C':'Morocco','5D':'Morocco',
-      '3V':'Tunisia','TS':'Tunisia',
-      'ST':'Sudan',
-      'ET':'Ethiopia',
-      '5Z':'Kenya',
-      '5H':'Tanzania','5I':'Tanzania',
-      '5X':'Uganda',
-      '9U':'Burundi',
-      '9X':'Rwanda',
-      'TL':'Central African Republic',
-      'TN':'Republic of the Congo',
-      '9Q':'Democratic Republic of the Congo',
-      'TR':'Gabon',
-      'TJ':'Cameroon',
-      'TT':'Chad',
-      '5T':'Mauritania',
-      '5U':'Niger',
-      '5V':'Togo',
-      'TU':'Ivory Coast',
-      'TY':'Benin',
-      'XT':'Burkina Faso',
-      '6W':'Senegal',
-      'EL':'Liberia',
-      'C5':'The Gambia',
-      'J5':'Guinea-Bissau',
-      '3X':'Guinea',
-      '9L':'Sierra Leone',
-      '9G':'Ghana',
-      'D4':'Cape Verde',
-      '3C':'Equatorial Guinea',
-      'S9':'Sao Tome & Principe',
-      'V5':'Namibia',
-      'ZS':'South Africa','ZR':'South Africa','ZT':'South Africa','ZU':'South Africa',
-      '7P':'Lesotho',
-      '3DA':'Eswatini',
-      'Z8':'South Sudan',
-      'E3':'Eritrea',
-      'D6':'Comoros',
-      '5R':'Madagascar',
-      '3B8':'Mauritius','3B9':'Rodrigues Island',
-      'FR':'Reunion Island',
-      'FT':'French Southern Territories',
-      'FH':'Mayotte',
-      'VQ9':'Chagos Islands',
-      'VK':'Australia','AX':'Australia',
-      'VK9N':'Norfolk Island','VK9C':'Cocos (Keeling) Islands',
-      'VK9X':'Christmas Island','VK9L':'Lord Howe Island',
-      'VK0M':'Macquarie Island','VK0H':'Heard Island',
-      'ZL':'New Zealand','ZM':'New Zealand',
-      'ZL7':'Chatham Islands','ZL8':'Kermadec Islands','ZL9':'Auckland & Campbell Islands',
-      'FK':'New Caledonia',
-      'FO':'French Polynesia',
-      'YJ':'Vanuatu',
-      '3D2':'Fiji',
-      'A3':'Tonga',
-      '5W':'Samoa',
-      'T3':'Kiribati',
-      'V7':'Marshall Islands',
-      'V6':'Micronesia',
-      'T8':'Palau',
-      'P2':'Papua New Guinea',
-      'H4':'Solomon Islands',
-      'T2':'Tuvalu',
-      'ZK3':'Tokelau',
-      'E5':'Cook Islands',
-      'E6':'Niue',
-      'ZK2':'Niue',
-      'DP0':'Antarctica','RI1AN':'Antarctica',
-      '1A':'Sovereign Military Order of Malta',
-      '4U1U':'United Nations HQ',
+      'K': 'United States', 'W': 'United States', 'N': 'United States', 'AA': 'United States', 'AB': 'United States',
+      'AC': 'United States', 'AD': 'United States', 'AE': 'United States', 'AF': 'United States', 'AG': 'United States',
+      'AH': 'United States', 'AI': 'United States', 'AJ': 'United States', 'AK': 'United States', 'AL': 'United States',
+      'KA': 'United States', 'KB': 'United States', 'KC': 'United States', 'KD': 'United States', 'KE': 'United States',
+      'KF': 'United States', 'KG': 'United States', 'KH': 'United States', 'KI': 'United States', 'KJ': 'United States',
+      'KK': 'United States', 'KL': 'United States', 'KM': 'United States', 'KN': 'United States', 'KO': 'United States',
+      'KP': 'United States', 'KQ': 'United States', 'KR': 'United States', 'KS': 'United States', 'KT': 'United States',
+      'KU': 'United States', 'KV': 'United States', 'KW': 'United States', 'KX': 'United States', 'KY': 'United States',
+      'KZ': 'United States', 'NA': 'United States', 'NB': 'United States', 'NC': 'United States', 'ND': 'United States',
+      'NE': 'United States', 'NF': 'United States', 'NG': 'United States', 'NH': 'United States', 'NI': 'United States',
+      'NJ': 'United States', 'NK': 'United States', 'NL': 'United States', 'NM': 'United States', 'NN': 'United States',
+      'NO': 'United States', 'NP': 'United States', 'NQ': 'United States', 'NR': 'United States', 'NS': 'United States',
+      'NT': 'United States', 'NU': 'United States', 'NV': 'United States', 'NW': 'United States', 'NX': 'United States',
+      'NY': 'United States', 'NZ': 'United States', 'WA': 'United States', 'WB': 'United States', 'WC': 'United States',
+      'WD': 'United States', 'WE': 'United States', 'WF': 'United States', 'WG': 'United States', 'WH': 'United States',
+      'WI': 'United States', 'WJ': 'United States', 'WK': 'United States', 'WL': 'United States', 'WM': 'United States',
+      'WN': 'United States', 'WO': 'United States', 'WP': 'United States', 'WQ': 'United States', 'WR': 'United States',
+      'WS': 'United States', 'WT': 'United States', 'WU': 'United States', 'WV': 'United States', 'WW': 'United States',
+      'WX': 'United States', 'WY': 'United States', 'WZ': 'United States',
+      'KH0': 'Mariana Islands', 'KH1': 'Baker & Howland Islands', 'KH2': 'Guam',
+      'KH3': 'Johnston Island', 'KH4': 'Midway Island', 'KH5': 'Palmyra & Jarvis Islands',
+      'KH6': 'Hawaii', 'KH7': 'Kure Island', 'KH8': 'American Samoa', 'KH9': 'Wake Island',
+      'KL7': 'Alaska', 'KP1': 'Navassa Island', 'KP2': 'US Virgin Islands',
+      'KP3': 'Puerto Rico', 'KP4': 'Puerto Rico', 'KP5': 'Desecheo Island',
+      'AH0': 'Mariana Islands', 'AH2': 'Guam', 'AH6': 'Hawaii', 'AH8': 'American Samoa',
+      'AL7': 'Alaska', 'WH6': 'Hawaii', 'WL7': 'Alaska', 'WP4': 'Puerto Rico',
+      'NH6': 'Hawaii', 'NL7': 'Alaska', 'NP4': 'Puerto Rico',
+      'VA': 'Canada', 'VB': 'Canada', 'VC': 'Canada', 'VD': 'Canada', 'VE': 'Canada',
+      'VF': 'Canada', 'VG': 'Canada', 'VO': 'Canada', 'VX': 'Canada', 'VY': 'Canada',
+      'CY': 'Canada', 'CZ': 'Canada', 'CF': 'Canada', 'CG': 'Canada', 'CH': 'Canada',
+      'CI': 'Canada', 'CJ': 'Canada', 'CK': 'Canada',
+      'XA': 'Mexico', 'XB': 'Mexico', 'XC': 'Mexico', 'XD': 'Mexico', 'XE': 'Mexico',
+      'XF': 'Mexico', '4A': 'Mexico', '4B': 'Mexico', '4C': 'Mexico', '6D': 'Mexico',
+      '6E': 'Mexico', '6F': 'Mexico', '6G': 'Mexico', '6H': 'Mexico',
+      'G': 'England', 'GD': 'Isle of Man', 'GI': 'Northern Ireland', 'GJ': 'Jersey',
+      'GM': 'Scotland', 'GU': 'Guernsey', 'GW': 'Wales', 'M': 'England',
+      '2E': 'England', '2D': 'Isle of Man', '2I': 'Northern Ireland', '2J': 'Jersey',
+      '2M': 'Scotland', '2U': 'Guernsey', '2W': 'Wales',
+      'F': 'France', 'HW': 'France', 'HX': 'France', 'HY': 'France', 'TH': 'France',
+      'TM': 'France', 'TO': 'France', 'TP': 'France', 'TQ': 'France', 'TV': 'France',
+      'DL': 'Germany', 'DA': 'Germany', 'DB': 'Germany', 'DC': 'Germany', 'DD': 'Germany',
+      'DE': 'Germany', 'DF': 'Germany', 'DG': 'Germany', 'DH': 'Germany', 'DI': 'Germany',
+      'DJ': 'Germany', 'DK': 'Germany', 'DM': 'Germany', 'DN': 'Germany', 'DO': 'Germany',
+      'DP': 'Germany', 'DQ': 'Germany', 'DR': 'Germany',
+      'I': 'Italy', 'IA': 'Italy', 'IB': 'Italy', 'IC': 'Italy', 'ID': 'Italy',
+      'IE': 'Italy', 'IF': 'Italy', 'IG': 'Italy', 'IH': 'Italy', 'II': 'Italy',
+      'IJ': 'Italy', 'IK': 'Italy', 'IL': 'Italy', 'IM': 'Italy', 'IN': 'Italy',
+      'IO': 'Italy', 'IP': 'Italy', 'IQ': 'Italy', 'IR': 'Italy', 'IS': 'Italy',
+      'IT': 'Italy', 'IU': 'Italy', 'IV': 'Italy', 'IW': 'Italy', 'IX': 'Italy',
+      'IY': 'Italy', 'IZ': 'Italy',
+      'EA': 'Spain', 'EB': 'Spain', 'EC': 'Spain', 'ED': 'Spain', 'EE': 'Spain',
+      'EF': 'Spain', 'EG': 'Spain', 'EH': 'Spain',
+      'EA6': 'Balearic Islands', 'EA8': 'Canary Islands', 'EA9': 'Ceuta & Melilla',
+      'CT': 'Portugal', 'CU': 'Azores', 'CS': 'Portugal',
+      'PA': 'Netherlands', 'PB': 'Netherlands', 'PC': 'Netherlands', 'PD': 'Netherlands',
+      'PE': 'Netherlands', 'PF': 'Netherlands', 'PG': 'Netherlands', 'PH': 'Netherlands',
+      'PI': 'Netherlands',
+      'ON': 'Belgium', 'OO': 'Belgium', 'OP': 'Belgium', 'OQ': 'Belgium', 'OR': 'Belgium',
+      'OS': 'Belgium', 'OT': 'Belgium',
+      'HB': 'Switzerland', 'HB0': 'Liechtenstein', 'HE': 'Switzerland',
+      'OE': 'Austria',
+      'OZ': 'Denmark', 'OU': 'Denmark', 'OV': 'Denmark', 'OW': 'Denmark', 'OX': 'Greenland',
+      'XP': 'Greenland', 'OY': 'Faroe Islands',
+      'SM': 'Sweden', 'SA': 'Sweden', 'SB': 'Sweden', 'SC': 'Sweden', 'SD': 'Sweden',
+      'SE': 'Sweden', 'SF': 'Sweden', 'SG': 'Sweden', 'SH': 'Sweden', 'SI': 'Sweden',
+      'SJ': 'Sweden', 'SK': 'Sweden', 'SL': 'Sweden', '7S': 'Sweden',
+      'LA': 'Norway', 'LB': 'Norway', 'LC': 'Norway', 'LD': 'Norway', 'LE': 'Norway',
+      'LF': 'Norway', 'LG': 'Norway', 'LH': 'Norway', 'LI': 'Norway', 'LJ': 'Norway',
+      'LK': 'Norway', 'LL': 'Norway', 'LM': 'Norway', 'LN': 'Norway',
+      'JW': 'Svalbard', 'JX': 'Jan Mayen',
+      'OH': 'Finland', 'OF': 'Finland', 'OG': 'Finland', 'OI': 'Finland',
+      'OH0': 'Aland Islands',
+      'SP': 'Poland', 'SN': 'Poland', 'SO': 'Poland', 'SQ': 'Poland', 'SR': 'Poland',
+      '3Z': 'Poland', 'HF': 'Poland',
+      'OK': 'Czech Republic', 'OL': 'Czech Republic',
+      'HA': 'Hungary', 'HG': 'Hungary',
+      'YO': 'Romania', 'YP': 'Romania', 'YQ': 'Romania', 'YR': 'Romania',
+      'LZ': 'Bulgaria',
+      'YU': 'Serbia', 'YT': 'Serbia',
+      'Z3': 'North Macedonia',
+      '9A': 'Croatia',
+      'S5': 'Slovenia',
+      'E7': 'Bosnia-Herzegovina',
+      '4O': 'Montenegro',
+      'ZA': 'Albania',
+      'SV': 'Greece', 'SW': 'Greece', 'SX': 'Greece', 'SY': 'Greece', 'SZ': 'Greece',
+      'J4': 'Greece',
+      'SV5': 'Dodecanese', 'SV9': 'Crete',
+      'SV/A': 'Mount Athos',
+      'TA': 'Turkey', 'TB': 'Turkey', 'TC': 'Turkey',
+      'YL': 'Latvia',
+      'LY': 'Lithuania',
+      'ES': 'Estonia',
+      'UR': 'Ukraine', 'US': 'Ukraine', 'UT': 'Ukraine', 'UU': 'Ukraine', 'UV': 'Ukraine',
+      'UW': 'Ukraine', 'UX': 'Ukraine', 'UY': 'Ukraine', 'UZ': 'Ukraine',
+      'EU': 'Belarus', 'EV': 'Belarus', 'EW': 'Belarus',
+      'ER': 'Moldova',
+      'UA': 'Russia', 'UB': 'Russia', 'UC': 'Russia', 'UD': 'Russia', 'UE': 'Russia',
+      'UF': 'Russia', 'UG': 'Russia', 'UH': 'Russia', 'UI': 'Russia',
+      'RA': 'Russia', 'RB': 'Russia', 'RC': 'Russia', 'RD': 'Russia', 'RE': 'Russia',
+      'RF': 'Russia', 'RG': 'Russia', 'RH': 'Russia', 'RI': 'Russia', 'RJ': 'Russia',
+      'RK': 'Russia', 'RL': 'Russia', 'RM': 'Russia', 'RN': 'Russia', 'RO': 'Russia',
+      'RP': 'Russia', 'RQ': 'Russia', 'RR': 'Russia', 'RS': 'Russia', 'RT': 'Russia',
+      'RU': 'Russia', 'RV': 'Russia', 'RW': 'Russia', 'RX': 'Russia', 'RY': 'Russia',
+      'RZ': 'Russia', 'R': 'Russia', 'U': 'Russia',
+      'UA2': 'Kaliningrad',
+      'EI': 'Ireland', 'EJ': 'Ireland',
+      'TF': 'Iceland',
+      'LX': 'Luxembourg',
+      '9H': 'Malta',
+      '4U1V': 'Vienna Intl Centre',
+      'JY': 'Jordan',
+      'LU': 'Argentina', 'LO': 'Argentina', 'LP': 'Argentina', 'LQ': 'Argentina',
+      'LR': 'Argentina', 'LS': 'Argentina', 'LT': 'Argentina', 'LV': 'Argentina',
+      'LW': 'Argentina', 'AY': 'Argentina', 'AZ': 'Argentina', 'L2': 'Argentina',
+      'L3': 'Argentina', 'L4': 'Argentina', 'L5': 'Argentina', 'L6': 'Argentina',
+      'L7': 'Argentina', 'L8': 'Argentina', 'L9': 'Argentina',
+      'PY': 'Brazil', 'PP': 'Brazil', 'PQ': 'Brazil', 'PR': 'Brazil', 'PS': 'Brazil',
+      'PT': 'Brazil', 'PU': 'Brazil', 'PV': 'Brazil', 'PW': 'Brazil', 'PX': 'Brazil',
+      'ZV': 'Brazil', 'ZW': 'Brazil', 'ZX': 'Brazil', 'ZY': 'Brazil', 'ZZ': 'Brazil',
+      'CE': 'Chile', 'CA': 'Chile', 'CB': 'Chile', 'CC': 'Chile', 'CD': 'Chile',
+      'XQ': 'Chile', 'XR': 'Chile', '3G': 'Chile',
+      'CE0Y': 'Easter Island', 'CE0Z': 'Juan Fernandez Islands', 'CE0X': 'San Felix Islands',
+      'HK': 'Colombia', 'HJ': 'Colombia', '5J': 'Colombia', '5K': 'Colombia',
+      'HC': 'Ecuador', 'HD': 'Ecuador',
+      'HC8': 'Galapagos Islands',
+      'OA': 'Peru', 'OB': 'Peru', 'OC': 'Peru',
+      'YV': 'Venezuela', 'YW': 'Venezuela', 'YX': 'Venezuela', 'YY': 'Venezuela',
+      '4M': 'Venezuela',
+      'CP': 'Bolivia',
+      'ZP': 'Paraguay',
+      'CX': 'Uruguay', 'CV': 'Uruguay', 'CW': 'Uruguay',
+      '9Y': 'Trinidad & Tobago',
+      '8R': 'Guyana',
+      'PZ': 'Suriname',
+      'PJ2': 'Curacao', 'PJ4': 'Bonaire', 'PJ5': 'Sint Eustatius', 'PJ6': 'Saba',
+      'PJ7': 'Sint Maarten',
+      'FY': 'French Guiana',
+      'HP': 'Panama', 'H3': 'Panama', 'HO': 'Panama',
+      'TI': 'Costa Rica', 'TE': 'Costa Rica',
+      'YN': 'Nicaragua', 'HT': 'Nicaragua', 'H7': 'Nicaragua',
+      'HR': 'Honduras', 'HQ': 'Honduras',
+      'TG': 'Guatemala', 'TD': 'Guatemala',
+      'YS': 'El Salvador', 'HU': 'El Salvador',
+      'V3': 'Belize',
+      'CO': 'Cuba', 'CM': 'Cuba', 'CL': 'Cuba', 'T4': 'Cuba',
+      'HI': 'Dominican Republic',
+      'HH': 'Haiti', '4V': 'Haiti',
+      '6Y': 'Jamaica',
+      'VP5': 'Turks & Caicos Islands',
+      'VP2E': 'Anguilla', 'VP2M': 'Montserrat', 'VP2V': 'British Virgin Islands',
+      'V2': 'Antigua & Barbuda',
+      'J3': 'Grenada',
+      'J6': 'Saint Lucia',
+      'J7': 'Dominica',
+      'J8': 'Saint Vincent',
+      'V4': 'Saint Kitts & Nevis',
+      '8P': 'Barbados',
+      'FM': 'Martinique',
+      'FG': 'Guadeloupe',
+      'FS': 'Saint Martin',
+      'FJ': 'Saint Barthelemy',
+      'VP9': 'Bermuda',
+      'ZF': 'Cayman Islands',
+      'C6': 'Bahamas',
+      'JA': 'Japan', 'JB': 'Japan', 'JC': 'Japan', 'JD': 'Japan', 'JE': 'Japan',
+      'JF': 'Japan', 'JG': 'Japan', 'JH': 'Japan', 'JI': 'Japan', 'JJ': 'Japan',
+      'JK': 'Japan', 'JL': 'Japan', 'JM': 'Japan', 'JN': 'Japan', 'JO': 'Japan',
+      'JP': 'Japan', 'JQ': 'Japan', 'JR': 'Japan', 'JS': 'Japan',
+      '7J': 'Japan', '7K': 'Japan', '7L': 'Japan', '7M': 'Japan', '7N': 'Japan',
+      '8J': 'Japan', '8K': 'Japan', '8L': 'Japan', '8M': 'Japan', '8N': 'Japan',
+      'JD1': 'Ogasawara',
+      'HL': 'South Korea', 'DS': 'South Korea', 'DT': 'South Korea', '6K': 'South Korea',
+      '6L': 'South Korea', '6M': 'South Korea', '6N': 'South Korea',
+      'BV': 'Taiwan', 'BW': 'Taiwan', 'BX': 'Taiwan', 'BM': 'Taiwan', 'BN': 'Taiwan',
+      'BO': 'Taiwan', 'BP': 'Taiwan', 'BQ': 'Taiwan',
+      'B': 'China', 'BA': 'China', 'BB': 'China', 'BC': 'China', 'BD': 'China',
+      'BE': 'China', 'BF': 'China', 'BG': 'China', 'BH': 'China', 'BI': 'China',
+      'BJ': 'China', 'BK': 'China', 'BL': 'China', 'BR': 'China', 'BS': 'China',
+      'BT': 'China', 'BU': 'China', 'BY': 'China', 'BZ': 'China',
+      '3W': 'Vietnam', 'XV': 'Vietnam',
+      'HS': 'Thailand', 'E2': 'Thailand',
+      '9M2': 'West Malaysia', '9M4': 'West Malaysia', '9M6': 'East Malaysia', '9M8': 'East Malaysia',
+      '9V': 'Singapore',
+      'YB': 'Indonesia', 'YC': 'Indonesia', 'YD': 'Indonesia', 'YE': 'Indonesia',
+      'YF': 'Indonesia', 'YG': 'Indonesia', 'YH': 'Indonesia',
+      '7A': 'Indonesia', '7B': 'Indonesia', '7C': 'Indonesia', '7D': 'Indonesia',
+      '8A': 'Indonesia', '8B': 'Indonesia', '8C': 'Indonesia', '8D': 'Indonesia',
+      'DU': 'Philippines', 'DV': 'Philippines', 'DW': 'Philippines', 'DX': 'Philippines',
+      'DY': 'Philippines', 'DZ': 'Philippines', '4D': 'Philippines', '4E': 'Philippines',
+      '4F': 'Philippines', '4G': 'Philippines', '4H': 'Philippines', '4I': 'Philippines',
+      'VU': 'India', 'VT': 'India', 'VW': 'India', '8T': 'India', '8U': 'India',
+      '8V': 'India', '8W': 'India', '8X': 'India', '8Y': 'India',
+      'AP': 'Pakistan', 'AQ': 'Pakistan', 'AR': 'Pakistan', 'AS': 'Pakistan',
+      '6P': 'Pakistan', '6Q': 'Pakistan', '6R': 'Pakistan', '6S': 'Pakistan',
+      '4S': 'Sri Lanka',
+      'S2': 'Bangladesh',
+      'XU': 'Cambodia',
+      'XW': 'Laos',
+      'XZ': 'Myanmar',
+      '9N': 'Nepal',
+      'A5': 'Bhutan',
+      'EX': 'Kyrgyzstan',
+      'EY': 'Tajikistan',
+      'EZ': 'Turkmenistan',
+      'UK': 'Uzbekistan',
+      'UN': 'Kazakhstan', 'UL': 'Kazakhstan', 'UM': 'Kazakhstan', 'UP': 'Kazakhstan',
+      'UQ': 'Kazakhstan',
+      'EP': 'Iran', 'EQ': 'Iran',
+      'YI': 'Iraq', 'HN': 'Iraq',
+      'OD': 'Lebanon',
+      'YK': 'Syria',
+      '4X': 'Israel', '4Z': 'Israel',
+      'HZ': 'Saudi Arabia', '7Z': 'Saudi Arabia',
+      'A4': 'Oman',
+      'A6': 'United Arab Emirates',
+      'A7': 'Qatar',
+      'A9': 'Bahrain',
+      '9K': 'Kuwait',
+      'A2': 'Botswana',
+      'EK': 'Armenia',
+      '4J': 'Azerbaijan', '4K': 'Azerbaijan',
+      '4L': 'Georgia',
+      'T5': 'Somalia',
+      'SU': 'Egypt', 'SS': 'Egypt', '6A': 'Egypt', '6B': 'Egypt',
+      '5A': 'Libya',
+      '7X': 'Algeria',
+      'CN': 'Morocco', '5C': 'Morocco', '5D': 'Morocco',
+      '3V': 'Tunisia', 'TS': 'Tunisia',
+      'ST': 'Sudan',
+      'ET': 'Ethiopia',
+      '5Z': 'Kenya',
+      '5H': 'Tanzania', '5I': 'Tanzania',
+      '5X': 'Uganda',
+      '9U': 'Burundi',
+      '9X': 'Rwanda',
+      'TL': 'Central African Republic',
+      'TN': 'Republic of the Congo',
+      '9Q': 'Democratic Republic of the Congo',
+      'TR': 'Gabon',
+      'TJ': 'Cameroon',
+      'TT': 'Chad',
+      '5T': 'Mauritania',
+      '5U': 'Niger',
+      '5V': 'Togo',
+      '5W': 'Samoa',
+      'TU': 'Ivory Coast',
+      'TY': 'Benin',
+      'XT': 'Burkina Faso',
+      '6W': 'Senegal',
+      'EL': 'Liberia',
+      'C5': 'The Gambia',
+      'J5': 'Guinea-Bissau',
+      '3X': 'Guinea',
+      '9L': 'Sierra Leone',
+      '9G': 'Ghana',
+      'D4': 'Cape Verde',
+      '3C': 'Equatorial Guinea',
+      'S9': 'Sao Tome & Principe',
+      'V5': 'Namibia',
+      'ZS': 'South Africa', 'ZR': 'South Africa', 'ZT': 'South Africa', 'ZU': 'South Africa',
+      '7P': 'Lesotho',
+      '3DA': 'Eswatini',
+      'Z8': 'South Sudan',
+      'E3': 'Eritrea',
+      'D6': 'Comoros',
+      '5R': 'Madagascar',
+      '3B8': 'Mauritius', '3B9': 'Rodrigues Island',
+      'FR': 'Reunion Island',
+      'FT': 'French Southern Territories',
+      'FH': 'Mayotte',
+      'VQ9': 'Chagos Islands',
+      'VK': 'Australia', 'AX': 'Australia',
+      'VK9N': 'Norfolk Island', 'VK9C': 'Cocos (Keeling) Islands',
+      'VK9X': 'Christmas Island', 'VK9L': 'Lord Howe Island',
+      'VK0M': 'Macquarie Island', 'VK0H': 'Heard Island',
+      'ZL': 'New Zealand', 'ZM': 'New Zealand',
+      'ZL7': 'Chatham Islands', 'ZL8': 'Kermadec Islands', 'ZL9': 'Auckland & Campbell Islands',
+      'FK': 'New Caledonia',
+      'FO': 'French Polynesia',
+      'YJ': 'Vanuatu',
+      '3D2': 'Fiji',
+      'A3': 'Tonga',
+      'T3': 'Kiribati',
+      'V7': 'Marshall Islands',
+      'V6': 'Micronesia',
+      'T8': 'Palau',
+      'P2': 'Papua New Guinea',
+      'H4': 'Solomon Islands',
+      'T2': 'Tuvalu',
+      'ZK3': 'Tokelau',
+      'E5': 'Cook Islands',
+      'E6': 'Niue',
+      'ZK2': 'Niue',
+      'DP0': 'Antarctica', 'RI1AN': 'Antarctica',
+      '1A': 'Sovereign Military Order of Malta',
+      '4U1U': 'United Nations HQ',
     };
-
     const sortedPrefixes = Object.keys(prefixMap).sort((a, b) => b.length - a.length);
-
     function lookupCountry(callsign) {
       if (!callsign) return null;
-      const baseCall = callsign.toUpperCase().trim().split('/')[0];
+      callsign = callsign.toUpperCase().trim();
+      const baseCall = callsign.split('/')[0];
       for (const prefix of sortedPrefixes) {
-        if (baseCall.startsWith(prefix)) return prefixMap[prefix];
+        if (baseCall.startsWith(prefix)) {
+          return prefixMap[prefix];
+        }
       }
       return null;
     }
 
-    // --- State ---
-    const countries = new Map();
-    let spotCount = 0;
-    const totalCallsigns = new Set();
-    let mqttClient = null;
+    // Approximate Maidenhead grids for DXCC entities (fallback when spot has no grid)
+    const ENTITY_GRIDS = {
+      'United States': 'EM48', 'Canada': 'FN03', 'Mexico': 'EK09',
+      'Alaska': 'BP51', 'Hawaii': 'BL01', 'Puerto Rico': 'FK68',
+      'US Virgin Islands': 'FK77', 'Guam': 'QK23', 'American Samoa': 'AH46',
+      'Mariana Islands': 'QK25', 'Wake Island': 'AL89',
+      'Baker & Howland Islands': 'AI40', 'Johnston Island': 'BK29',
+      'Midway Island': 'BL19', 'Palmyra & Jarvis Islands': 'BK41',
+      'Kure Island': 'BL09', 'Navassa Island': 'FK28', 'Desecheo Island': 'FK68',
+      'England': 'IO91', 'Scotland': 'IO85', 'Wales': 'IO81', 'Northern Ireland': 'IO64',
+      'Isle of Man': 'IO74', 'Jersey': 'IN89', 'Guernsey': 'IN89',
+      'France': 'JN18', 'Germany': 'JO31', 'Italy': 'JN61',
+      'Spain': 'IN80', 'Portugal': 'IM58', 'Netherlands': 'JO22',
+      'Belgium': 'JO20', 'Switzerland': 'JN47', 'Austria': 'JN78',
+      'Liechtenstein': 'JN47', 'Luxembourg': 'JN39', 'Malta': 'JM75',
+      'Denmark': 'JO55', 'Sweden': 'JO89', 'Norway': 'JO59',
+      'Finland': 'KP20', 'Ireland': 'IO63', 'Iceland': 'HP94',
+      'Greenland': 'GP46', 'Faroe Islands': 'IP62',
+      'Svalbard': 'JQ78', 'Jan Mayen': 'IQ50', 'Aland Islands': 'KP00',
+      'Poland': 'KO02', 'Czech Republic': 'JO70', 'Hungary': 'JN97',
+      'Romania': 'KN25', 'Bulgaria': 'KN22', 'Greece': 'KM17',
+      'Turkey': 'KN30', 'Croatia': 'JN75', 'Serbia': 'KN04',
+      'Slovenia': 'JN76', 'Bosnia-Herzegovina': 'JN83',
+      'North Macedonia': 'KN11', 'Montenegro': 'JN92', 'Albania': 'JN91',
+      'Latvia': 'KO27', 'Lithuania': 'KO15', 'Estonia': 'KO29',
+      'Ukraine': 'KO50', 'Belarus': 'KO33', 'Moldova': 'KN46',
+      'Russia': 'KO85', 'Kaliningrad': 'KO04',
+      'Balearic Islands': 'JM19', 'Canary Islands': 'IL18',
+      'Ceuta & Melilla': 'IM75', 'Azores': 'HM58',
+      'Dodecanese': 'KM46', 'Crete': 'KM25', 'Mount Athos': 'KN20',
+      'Vienna Intl Centre': 'JN88',
+      'Japan': 'PM95', 'Ogasawara': 'QL17',
+      'South Korea': 'PM37', 'Taiwan': 'PL04',
+      'China': 'OM89', 'Vietnam': 'OK20', 'Thailand': 'OK03',
+      'West Malaysia': 'OJ05', 'East Malaysia': 'OJ68',
+      'Singapore': 'OJ11', 'Indonesia': 'OI33', 'Philippines': 'PK04',
+      'India': 'MK83', 'Pakistan': 'MM41', 'Sri Lanka': 'MJ96',
+      'Bangladesh': 'NL33', 'Cambodia': 'OK13', 'Laos': 'OK02',
+      'Myanmar': 'NK96', 'Nepal': 'NL17', 'Bhutan': 'NL27',
+      'Kyrgyzstan': 'MN73', 'Tajikistan': 'MM48', 'Turkmenistan': 'MM37',
+      'Uzbekistan': 'MN41', 'Kazakhstan': 'MN83',
+      'Iran': 'LL38', 'Iraq': 'LM33', 'Lebanon': 'KM73',
+      'Syria': 'KM74', 'Israel': 'KM72', 'Jordan': 'KM71',
+      'Saudi Arabia': 'LL24', 'Oman': 'LL93',
+      'United Arab Emirates': 'LL75', 'Qatar': 'LL55',
+      'Bahrain': 'LL56', 'Kuwait': 'LM49',
+      'Armenia': 'LN20', 'Azerbaijan': 'LN41', 'Georgia': 'LN21',
+      'Somalia': 'LJ10',
+      'Argentina': 'GF05', 'Brazil': 'GG87', 'Chile': 'FF46',
+      'Colombia': 'FJ34', 'Ecuador': 'FI09', 'Peru': 'FH17',
+      'Venezuela': 'FJ50', 'Bolivia': 'FH54', 'Paraguay': 'GG06',
+      'Uruguay': 'GF25', 'Trinidad & Tobago': 'FK90',
+      'Guyana': 'GJ06', 'Suriname': 'GJ25', 'French Guiana': 'GJ35',
+      'Easter Island': 'DG52', 'Juan Fernandez Islands': 'EF46',
+      'San Felix Islands': 'EG06', 'Galapagos Islands': 'EI09',
+      'Panama': 'FJ08', 'Costa Rica': 'EJ79', 'Nicaragua': 'EK72',
+      'Honduras': 'EK55', 'Guatemala': 'EK44', 'El Salvador': 'EK43',
+      'Belize': 'EK57', 'Cuba': 'EL93', 'Dominican Republic': 'FK58',
+      'Haiti': 'FK48', 'Jamaica': 'FK18', 'Bahamas': 'FL05',
+      'Bermuda': 'FM72', 'Cayman Islands': 'EK99',
+      'Turks & Caicos Islands': 'FL41',
+      'Anguilla': 'FK88', 'Montserrat': 'FK86',
+      'British Virgin Islands': 'FK78', 'Antigua & Barbuda': 'FK97',
+      'Grenada': 'FK92', 'Saint Lucia': 'FK94',
+      'Dominica': 'FK95', 'Saint Vincent': 'FK93',
+      'Saint Kitts & Nevis': 'FK87', 'Barbados': 'GK03',
+      'Martinique': 'FK94', 'Guadeloupe': 'FK96',
+      'Saint Martin': 'FK88', 'Saint Barthelemy': 'FK87',
+      'Curacao': 'FK52', 'Bonaire': 'FK62',
+      'Sint Eustatius': 'FK87', 'Saba': 'FK87', 'Sint Maarten': 'FK88',
+      'Egypt': 'KL69', 'Libya': 'JM73', 'Algeria': 'JM16',
+      'Morocco': 'IM63', 'Tunisia': 'JM58',
+      'Sudan': 'KK65', 'South Sudan': 'KK14',
+      'Ethiopia': 'KK28', 'Kenya': 'KI57', 'Tanzania': 'KI63',
+      'Uganda': 'KI60', 'Burundi': 'KI46', 'Rwanda': 'KI59',
+      'Central African Republic': 'JK45',
+      'Republic of the Congo': 'JI52',
+      'Democratic Republic of the Congo': 'JI78',
+      'Gabon': 'JI30', 'Cameroon': 'JJ55', 'Chad': 'JK52',
+      'Mauritania': 'IK50', 'Niger': 'JK33', 'Togo': 'JJ16',
+      'Ivory Coast': 'IJ57', 'Benin': 'JJ16',
+      'Burkina Faso': 'IK18', 'Senegal': 'IK44',
+      'Liberia': 'IJ56', 'The Gambia': 'IK43',
+      'Guinea-Bissau': 'IK32', 'Guinea': 'IJ69',
+      'Sierra Leone': 'IJ38', 'Ghana': 'IJ95',
+      'Cape Verde': 'HK76', 'Equatorial Guinea': 'JJ31',
+      'Sao Tome & Principe': 'JJ10',
+      'Namibia': 'JG77', 'South Africa': 'KG33',
+      'Botswana': 'KG42', 'Lesotho': 'KG30', 'Eswatini': 'KG53',
+      'Eritrea': 'KK65', 'Comoros': 'LH77', 'Madagascar': 'LH28',
+      'Mauritius': 'LG89', 'Rodrigues Island': 'LG99',
+      'Reunion Island': 'LG78', 'Mayotte': 'LH62',
+      'Chagos Islands': 'MI61', 'French Southern Territories': 'LF08',
+      'Australia': 'QF56', 'New Zealand': 'RE66',
+      'Norfolk Island': 'RG17', 'Cocos (Keeling) Islands': 'NI96',
+      'Christmas Island': 'OH29', 'Lord Howe Island': 'QF98',
+      'Macquarie Island': 'QE34', 'Heard Island': 'MD66',
+      'Chatham Islands': 'RE54', 'Kermadec Islands': 'RF70',
+      'Auckland & Campbell Islands': 'RE41',
+      'New Caledonia': 'RG37', 'French Polynesia': 'BH51',
+      'Vanuatu': 'RH24', 'Fiji': 'RH36', 'Tonga': 'AH38',
+      'Samoa': 'AH47', 'Kiribati': 'BI41',
+      'Marshall Islands': 'RJ38', 'Micronesia': 'RJ56',
+      'Palau': 'PJ77', 'Papua New Guinea': 'QI18',
+      'Solomon Islands': 'QI90', 'Tuvalu': 'RI60',
+      'Tokelau': 'AI20', 'Cook Islands': 'BH41', 'Niue': 'AH26',
+      'Antarctica': 'KC67',
+      'Sovereign Military Order of Malta': 'JN61',
+      'United Nations HQ': 'FN30',
+    };
 
-    // --- DOM refs ---
+    // --- Infer mode from frequency (Hz) and spotter note (from server.js) ---
+    function inferMode(hz, note) {
+      if (note) {
+        const n = note.toUpperCase();
+        if (n.includes('FT2')) return 'FT2';
+        if (n.includes('FT8')) return 'FT8';
+        if (n.includes('FT4')) return 'FT4';
+        if (n.includes('JS8')) return 'JS8';
+        if (n.includes('RTTY')) return 'RTTY';
+        if (n.includes('PSK')) return 'PSK';
+        if (n.includes('WSPR')) return 'WSPR';
+        if (n.includes('CW')) return 'CW';
+        if (n.includes('SSB') || n.includes('USB') || n.includes('LSB') || n.includes('PHONE')) return 'SSB';
+      }
+      if (!hz) return null;
+      const ft8Freqs = [1840000, 3573000, 5357000, 7074000, 10136000, 14074000, 18100000, 21074000, 24915000, 28074000, 50313000];
+      const ft4Freqs = [3575500, 7047500, 10140000, 14080000, 18104000, 21140000, 24919000, 28180000, 50318000];
+      for (const f of ft8Freqs) { if (Math.abs(hz - f) < 4000) return 'FT8'; }
+      for (const f of ft4Freqs) { if (Math.abs(hz - f) < 4000) return 'FT4'; }
+      const ssbRanges = [
+        [1800000, 2000000, 1843000], [3600000, 4000000, 3600000],
+        [7125000, 7300000, 7125000], [14150000, 14350000, 14150000],
+        [18110000, 18168000, 18110000], [21200000, 21450000, 21200000],
+        [24930000, 24990000, 24930000], [28300000, 29700000, 28300000],
+        [50100000, 54000000, 50100000],
+      ];
+      for (const [lo, hi, phoneStart] of ssbRanges) {
+        if (hz >= phoneStart && hz <= hi) return 'SSB';
+      }
+      const cwRanges = [
+        [1800000, 1843000], [3500000, 3600000], [5330500, 5354000],
+        [7000000, 7125000], [10100000, 10150000], [14000000, 14150000],
+        [18068000, 18110000], [21000000, 21200000], [24890000, 24930000],
+        [28000000, 28300000], [50000000, 50100000],
+      ];
+      for (const [lo, hi] of cwRanges) {
+        if (hz >= lo && hz <= hi) return 'CW';
+      }
+      return null;
+    }
+
+    // --- Mode filter state ---
+    // Map mode names from g7vrd to our filter categories
+    function categorizeMode(mode) {
+      const m = mode.toUpperCase();
+      if (m === 'FT8') return 'FT8';
+      if (m === 'FT4') return 'FT4';
+      if (m === 'FT2') return 'FT2';
+      if (m === 'CW') return 'CW';
+      if (m === 'SSB' || m === 'USB' || m === 'LSB' || m === 'AM' || m === 'FM' || m === 'PHONE') return 'SSB';
+      if (m === 'RTTY' || m === 'BAUDOT') return 'RTTY';
+      if (m === 'VARAC') return 'VARAC';
+      if (m === 'JT65' || m === 'JT9') return 'JT65';
+      if (m === 'Q65') return 'Q65';
+      if (m === 'JS8') return 'JS8';
+      if (m === 'WSPR' || m === 'FST4W') return 'WSPR';
+      if (m === 'MSK144') return 'MSK144';
+      if (m === 'FREEDV') return 'FREEDV';
+      // Catch remaining digital/PSK modes
+      if (m.startsWith('PSK') || m === 'OLIVIA' || m === 'MFSK' || m === 'SSTV'
+          || m === 'HELL' || m === 'ROS' || m === 'DOMINO' || m === 'CONTESTI'
+          || m === 'THROB' || m === 'FSQ' || m === 'OPERA' || m === 'FST4') return 'PSK';
+      if (m.includes('PSK')) return 'PSK';
+      if (m.includes('CW')) return 'CW';
+      if (m.includes('SSB') || m.includes('PHONE')) return 'SSB';
+      if (m.includes('RTTY')) return 'RTTY';
+      return 'PSK';
+    }
+
+    const activeModes = new Set(['FT8', 'FT4', 'FT2', 'CW', 'SSB', 'RTTY', 'PSK', 'VARAC', 'JT65', 'Q65', 'JS8', 'WSPR', 'MSK144', 'FREEDV']);
+
+    // Load saved mode preferences
+    const savedModes = localStorage.getItem('activeModes');
+    if (savedModes) {
+      try {
+        const parsed = JSON.parse(savedModes);
+        activeModes.clear();
+        parsed.forEach(m => activeModes.add(m));
+      } catch (e) {}
+    }
+
+    // Initialize mode buttons
+    document.querySelectorAll('.mode-btn[data-mode]').forEach(btn => {
+      const mode = btn.dataset.mode;
+      if (activeModes.has(mode)) {
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
+      } else {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-pressed', 'false');
+      }
+      btn.addEventListener('click', () => {
+        btn.classList.toggle('active');
+        if (activeModes.has(mode)) {
+          activeModes.delete(mode);
+          btn.setAttribute('aria-pressed', 'false');
+        } else {
+          activeModes.add(mode);
+          btn.setAttribute('aria-pressed', 'true');
+        }
+        localStorage.setItem('activeModes', JSON.stringify([...activeModes]));
+        rebuildDisplay();
+      });
+    });
+
+    // --- Band filter state ---
+    const ALL_BANDS = ['160m', '80m', '60m', '40m', '30m', '20m', '17m', '15m', '12m', '10m', '6m'];
+    const activeBands = new Set(ALL_BANDS);
+
+    // Load saved band preferences
+    const savedBands = localStorage.getItem('activeBands');
+    if (savedBands) {
+      try {
+        const parsed = JSON.parse(savedBands);
+        activeBands.clear();
+        parsed.forEach(b => activeBands.add(b));
+      } catch (e) {}
+    }
+
+    // Initialize band buttons
+    document.querySelectorAll('.mode-btn[data-band]').forEach(btn => {
+      const band = btn.dataset.band;
+      if (activeBands.has(band)) {
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
+      } else {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-pressed', 'false');
+      }
+      btn.addEventListener('click', () => {
+        btn.classList.toggle('active');
+        if (activeBands.has(band)) {
+          activeBands.delete(band);
+          btn.setAttribute('aria-pressed', 'false');
+        } else {
+          activeBands.add(band);
+          btn.setAttribute('aria-pressed', 'true');
+        }
+        localStorage.setItem('activeBands', JSON.stringify([...activeBands]));
+        rebuildDisplay();
+      });
+    });
+
+    // --- QTH and sort state ---
+    const qthInput = document.getElementById('qthInput');
+    const sortMode = document.getElementById('sortMode');
+
+    const savedQth = localStorage.getItem('myQth');
+    if (savedQth) qthInput.value = savedQth;
+
+    const savedSort = localStorage.getItem('sortMode');
+    if (savedSort) sortMode.value = savedSort;
+
+    qthInput.addEventListener('input', () => {
+      const v = qthInput.value.toUpperCase();
+      qthInput.value = v;
+      if (v.length === 4) {
+        localStorage.setItem('myQth', v);
+        rebuildDisplay();
+      }
+    });
+
+    sortMode.addEventListener('change', () => {
+      localStorage.setItem('sortMode', sortMode.value);
+      rebuildDisplay();
+    });
+
+    // --- Maidenhead grid to lat/lon ---
+    function gridToLatLon(grid) {
+      if (!grid || grid.length < 4) return null;
+      const g = grid.toUpperCase();
+      const lon = (g.charCodeAt(0) - 65) * 20 - 180
+                + parseInt(g[2]) * 2
+                + 1; // center of subsquare
+      const lat = (g.charCodeAt(1) - 65) * 10 - 90
+                + parseInt(g[3]) * 1
+                + 0.5; // center of subsquare
+      return { lat, lon };
+    }
+
+    // --- Haversine distance (km) ---
+    function haversineKm(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) ** 2
+              + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
+              * Math.sin(dLon / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    // Check if QTH grid is in the contiguous US (lat 24-50, lon -125 to -66)
+    function isUsGrid(grid) {
+      const pos = gridToLatLon(grid);
+      if (!pos) return false;
+      return pos.lat >= 24 && pos.lat <= 50 && pos.lon >= -125 && pos.lon <= -66;
+    }
+
+    // Format distance with appropriate units
+    function formatDist(km) {
+      if (isUsGrid(qthInput.value)) {
+        return Math.round(km * 0.621371 / 10) * 10 + 'mi';
+      }
+      return Math.round(km / 10) * 10 + 'km';
+    }
+
+    // Speech-friendly distance: "X hundred Y miles" instead of raw number
+    function speakDist(km) {
+      if (isUsGrid(qthInput.value)) {
+        const miles = Math.round(km * 0.621371 / 10) * 10;
+        if (miles < 100) return miles + ' miles';
+        const hundreds = Math.floor(miles / 100);
+        const remainder = miles % 100;
+        if (remainder === 0) return hundreds + ' hundred miles';
+        return hundreds + ' hundred ' + remainder + ' miles';
+      }
+      const rounded = Math.round(km / 10) * 10;
+      if (rounded < 100) return rounded + ' kilometers';
+      const hundreds = Math.floor(rounded / 100);
+      const remainder = rounded % 100;
+      if (remainder === 0) return hundreds + ' hundred kilometers';
+      return hundreds + ' hundred ' + remainder + ' kilometers';
+    }
+
+    // Track best grid per callsign (most recent)
+    const callsignGrids = new Map();
+
+    // Countries where distance display is suppressed (domestic)
+    const SKIP_DIST = ['United States', 'Canada', 'Mexico'];
+
+    // Compute average distance (km) from QTH to a country's callsigns
+    function countryDist(data) {
+      const myPos = gridToLatLon(qthInput.value);
+      if (!myPos) return -1;
+      let totalDist = 0, gridCount = 0;
+      for (const call of data.callsignModes.keys()) {
+        const g = callsignGrids.get(call);
+        if (g) {
+          const pos = gridToLatLon(g);
+          if (pos) {
+            totalDist += haversineKm(myPos.lat, myPos.lon, pos.lat, pos.lon);
+            gridCount++;
+          }
+        }
+      }
+      return gridCount > 0 ? totalDist / gridCount : -1;
+    }
+
+    // --- Filter helper ---
+    function passesFilter(spot) {
+      if (!activeModes.has(spot.category)) return false;
+      // If spot has a band, it must be in activeBands; spots without band info always pass
+      if (spot.band && !activeBands.has(spot.band)) return false;
+      return true;
+    }
+
+    // --- Data store: all spots, unfiltered ---
+    const allSpots = []; // { callsign, country, mode, category, band, grid, message, timestamp }
+    const MAX_SPOTS = 2000;
+
     const countryGrid = document.getElementById('countryGrid');
     const feedList = document.getElementById('feedList');
     const emptyState = document.getElementById('emptyState');
@@ -681,37 +1223,8 @@
     const statusText = document.getElementById('statusText');
     const voiceMode = document.getElementById('voiceMode');
     const srAnnounce = document.getElementById('srAnnounce');
-    const bandSelect = document.getElementById('bandSelect');
-    const modeSelect = document.getElementById('modeSelect');
-
-    // --- Persistence ---
-    const savedMode = localStorage.getItem('voiceMode');
-    if (savedMode) voiceMode.value = savedMode;
-    const savedBand = localStorage.getItem('band');
-    if (savedBand) bandSelect.value = savedBand;
-    const savedModeFilter = localStorage.getItem('modeFilter');
-    if (savedModeFilter) modeSelect.value = savedModeFilter;
-
-    voiceMode.addEventListener('change', () => {
-      localStorage.setItem('voiceMode', voiceMode.value);
-      if (voiceMode.value === 'self-voice') speak('Voice enabled');
-    });
-
-    bandSelect.addEventListener('change', () => {
-      localStorage.setItem('band', bandSelect.value);
-      reconnect();
-    });
-
-    modeSelect.addEventListener('change', () => {
-      localStorage.setItem('modeFilter', modeSelect.value);
-      reconnect();
-    });
 
     // --- Speech / Accessibility ---
-    document.getElementById('testVoice').addEventListener('click', () => {
-      announceCountry('Japan', 'JA1XYZ');
-    });
-
     const speechQueue = [];
     let speechBusy = false;
 
@@ -720,22 +1233,30 @@
       if (!speechBusy) drainSpeechQueue();
     }
 
+    let drainTimer = null;
+
     function drainSpeechQueue() {
+      if (drainTimer) { clearTimeout(drainTimer); drainTimer = null; }
       if (speechQueue.length === 0) { speechBusy = false; return; }
       speechBusy = true;
       const text = speechQueue.shift();
-      speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = 1.2;
       utterance.pitch = 1.0;
-      utterance.onend = () => drainSpeechQueue();
-      utterance.onerror = () => drainSpeechQueue();
+      let settled = false;
+      const next = () => {
+        if (settled) return;
+        settled = true;
+        drainSpeechQueue();
+      };
+      utterance.onend = next;
+      utterance.onerror = next;
       speechSynthesis.resume();
       speechSynthesis.speak(utterance);
-      setTimeout(() => {
-        if (speechSynthesis.speaking) {
-          speechSynthesis.cancel();
-          drainSpeechQueue();
+      // Safety timeout in case onend/onerror never fire
+      drainTimer = setTimeout(() => {
+        if (!settled) {
+          speechSynthesis.cancel(); // will trigger onerror -> next()
         }
       }, 10000);
     }
@@ -744,9 +1265,44 @@
       if (speechSynthesis.paused) speechSynthesis.resume();
     }, 5000);
 
-    function announceCountry(country, callsign) {
+    document.getElementById('testVoice').addEventListener('click', () => {
+      announceCountry('Japan', 'JA1XYZ', 'FT8', '20m', 'PM95');
+    });
+
+    const savedVoiceMode = localStorage.getItem('voiceMode');
+    if (savedVoiceMode) {
+      voiceMode.value = savedVoiceMode;
+    }
+    // Browsers block speechSynthesis until a user gesture; unlock on first interaction
+    if (voiceMode.value === 'self-voice') {
+      const unlockSpeech = () => {
+        speak('Voice enabled');
+        document.removeEventListener('click', unlockSpeech);
+        document.removeEventListener('keydown', unlockSpeech);
+      };
+      document.addEventListener('click', unlockSpeech);
+      document.addEventListener('keydown', unlockSpeech);
+    }
+    voiceMode.addEventListener('change', () => {
+      localStorage.setItem('voiceMode', voiceMode.value);
+      if (voiceMode.value === 'self-voice') {
+        speak('Voice enabled');
+      }
+    });
+
+    function announceCountry(country, callsign, spotMode, band, grid) {
       const mode = voiceMode.value;
-      const text = `${country}, ${callsign.split('').join(' ')}`;
+      let text = `New country: ${country}`;
+      if (spotMode) text += ` on ${spotMode}`;
+      if (band) text += ` ${band.replace('m', ' meters')}`;
+      if (grid && !SKIP_DIST.includes(country)) {
+        const myPos = gridToLatLon(qthInput.value);
+        const spotPos = gridToLatLon(grid);
+        if (myPos && spotPos) {
+          const km = haversineKm(myPos.lat, myPos.lon, spotPos.lat, spotPos.lon);
+          if (km > 0) text += `, ${speakDist(km)}`;
+        }
+      }
       if (mode === 'self-voice') {
         speak(text);
       } else if (mode === 'screen-reader') {
@@ -755,203 +1311,664 @@
       }
     }
 
-    // --- UI ---
-    function updateStats() {
+    // --- Display rebuild from stored spots ---
+    function rebuildDisplay() {
+      // Clear display
+      countryGrid.innerHTML = '';
+      feedList.innerHTML = '';
+
+      const countries = new Map();
+      const callsigns = new Set();
+      let spotCount = 0;
+      const modeCounts = new Map();
+
+      // Replay all stored spots through the filter
+      for (const spot of allSpots) {
+        if (!passesFilter(spot)) continue;
+        spotCount++;
+        callsigns.add(spot.callsign);
+        modeCounts.set(spot.category, (modeCounts.get(spot.category) || 0) + 1);
+
+        const existing = countries.get(spot.country);
+        if (existing) {
+          existing.count++;
+          existing.lastSeen = spot.timestamp;
+          if (!existing.callsignModes.has(spot.callsign)) {
+            existing.callsignModes.set(spot.callsign, new Set());
+          }
+          existing.callsignModes.get(spot.callsign).add(spot.mode);
+          if (spot.band) existing.bands.add(spot.band);
+        } else {
+          const cm = new Map();
+          cm.set(spot.callsign, new Set([spot.mode]));
+          countries.set(spot.country, {
+            count: 1,
+            lastSeen: spot.timestamp,
+            callsignModes: cm,
+            bands: new Set(spot.band ? [spot.band] : []),
+          });
+        }
+      }
+
+      // Sort country cards based on selected sort mode
+      const currentSort = sortMode.value;
+      const myPos = gridToLatLon(qthInput.value);
+      let sorted;
+
+      const isDistSort = (currentSort === 'distance' || currentSort === 'closest');
+
+      sorted = [...countries.entries()].map(([name, data]) => {
+        return [name, data, myPos ? countryDist(data) : -1];
+      });
+
+      if (isDistSort && myPos) {
+        if (currentSort === 'distance') {
+          sorted.sort((a, b) => b[2] - a[2]); // most distant first
+        } else {
+          // closest: positive distances first ascending, then unknowns (-1) at end
+          sorted.sort((a, b) => {
+            if (a[2] < 0 && b[2] < 0) return 0;
+            if (a[2] < 0) return 1;
+            if (b[2] < 0) return -1;
+            return a[2] - b[2];
+          });
+        }
+      } else if (currentSort === 'spots') {
+        sorted.sort((a, b) => a[1].callsignModes.size - b[1].callsignModes.size);
+      } else if (currentSort === 'mostspots') {
+        sorted.sort((a, b) => b[1].callsignModes.size - a[1].callsignModes.size);
+      } else {
+        sorted.sort((a, b) => a[0].localeCompare(b[0]));
+      }
+
+      if (sorted.length === 0) {
+        countryGrid.innerHTML = `<div class="empty-state"><h3>No spots for selected modes</h3><p>Toggle modes above or wait for new spots</p></div>`;
+      }
+      for (const [name, data, dist] of sorted) {
+        const card = document.createElement('div');
+        card.className = 'country-card';
+        card.id = 'country-' + name.replace(/[^a-zA-Z0-9]/g, '_');
+        card.setAttribute('tabindex', '0');
+        const skipDist = SKIP_DIST.includes(name);
+        const modes = uniqueModes(data.callsignModes);
+        const bands = formatBands(data.bands);
+        const distLabel = (dist > 0 && !skipDist)
+          ? ` <span class="count">${formatDist(dist)}</span>` : '';
+        card.setAttribute('aria-label', `${name}, ${modes.text}${bands.speech ? ', ' + bands.speech : ''}${!skipDist && dist > 0 ? ', ' + speakDist(dist) : ''}`);
+        card.innerHTML = `
+          <div aria-hidden="true">
+            <div class="name">${esc(name)} <span class="count">${data.callsignModes.size}</span>${distLabel}</div>
+            <div class="card-body">
+              <div class="card-main">
+                <div class="callsign-list">${renderCallsignModes(data.callsignModes)}</div>
+              </div>
+              ${bands.html ? `<div class="band-col">${bands.html}</div>` : ''}
+            </div>
+          </div>
+        `;
+        countryGrid.appendChild(card);
+      }
+
+      // Render feed (most recent first, limit 200)
+      const filtered = allSpots.filter(s => passesFilter(s));
+      const recent = filtered.slice(-200).reverse();
+      for (const spot of recent) {
+        feedList.appendChild(makeFeedItem(spot));
+      }
+
+      // Update stats
       document.getElementById('countryCount').textContent = countries.size;
-      document.getElementById('callsignCount').textContent = totalCallsigns.size;
-      document.getElementById('messageCount').textContent = spotCount;
+      document.getElementById('callsignCount').textContent = callsigns.size;
+      document.getElementById('spotCount').textContent = spotCount;
+      renderModeTotals(modeCounts);
     }
 
-    function renderCountryCard(name, data, highlight) {
-      const safeId = 'country-' + name.replace(/[^a-zA-Z0-9]/g, '_');
-      const existing = document.getElementById(safeId);
-      if (existing) {
-        existing.querySelector('.meta').innerHTML =
-          `${data.callsigns.slice(-5).join(', ')} <span class="count">${data.count}</span>`;
-        if (highlight) {
-          existing.classList.add('highlight');
-          setTimeout(() => existing.classList.remove('highlight'), 2000);
+    // Space out callsigns so screen readers spell them instead of pronouncing as words
+    function spaceCall(s) { return s.split('').join(' '); }
+
+    function esc(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    // Collect unique mode names from a callsignModes map for aria-label
+    function uniqueModes(callsignModes) {
+      const modes = new Set();
+      for (const modeSet of callsignModes.values()) {
+        for (const m of modeSet) modes.add(m);
+      }
+      const list = [...modes];
+      return { count: list.length, label: list.length === 1 ? '1 mode' : list.length + ' modes', text: list.join(', ') };
+    }
+
+    // Format bands set for display and speech, sorted by frequency order
+    function formatBands(bands) {
+      if (!bands || bands.size === 0) return { html: '', speech: '' };
+      const sorted = [...bands].sort((a, b) => ALL_BANDS.indexOf(a) - ALL_BANDS.indexOf(b));
+      const html = sorted.map(b => `<span class="band-pill">${b}</span>`).join('');
+      const speech = sorted.map(b => b.replace('m', ' meters')).join(', ');
+      return { html, speech };
+    }
+
+    function modePillClass(mode) {
+      const cat = categorizeMode(mode).toLowerCase();
+      return 'mode-pill mode-' + cat;
+    }
+
+    function renderCallsignModes(callsignModes) {
+      // Group callsigns by their primary mode category, track popularity
+      const byCategory = new Map(); // category -> [callsign, ...]
+      for (const [call, modes] of callsignModes) {
+        for (const m of modes) {
+          const cat = categorizeMode(m);
+          if (!byCategory.has(cat)) byCategory.set(cat, []);
+          byCategory.get(cat).push({ call, mode: m });
+        }
+      }
+
+      // Sort categories by popularity (most callsigns first)
+      const sortedCats = [...byCategory.entries()].sort((a, b) => b[1].length - a[1].length);
+
+      // Pick 3 entries: one from each top mode, fill remainder from most popular
+      const picked = [];
+      const usedCalls = new Set();
+      for (const [cat, calls] of sortedCats) {
+        if (picked.length >= 3) break;
+        // Pick the most recent (last) unused callsign from this category
+        for (let i = calls.length - 1; i >= 0; i--) {
+          if (!usedCalls.has(calls[i].call)) {
+            picked.push(calls[i]);
+            usedCalls.add(calls[i].call);
+            break;
+          }
+        }
+      }
+
+      // If fewer than 3, fill from the most popular category
+      if (picked.length < 3 && sortedCats.length > 0) {
+        const topCalls = sortedCats[0][1];
+        for (let i = topCalls.length - 1; i >= 0 && picked.length < 3; i--) {
+          if (!usedCalls.has(topCalls[i].call)) {
+            picked.push(topCalls[i]);
+            usedCalls.add(topCalls[i].call);
+          }
+        }
+      }
+
+      const totalCallsigns = callsignModes.size;
+      return picked.map(({ call, mode }, i) => {
+        const pill = `<span class="${modePillClass(mode)}">${esc(mode)}</span>`;
+        const ellipsis = (i === picked.length - 1 && totalCallsigns > 3)
+          ? `<span style="color:#556688; margin-left:4px">...</span>` : '';
+        return `<div class="callsign-entry"><span class="call" aria-label="${spaceCall(call)}">${esc(call)}</span>${pill}${ellipsis}</div>`;
+      }).join('');
+    }
+
+    function makeFeedItem(spot) {
+      const time = new Date(spot.timestamp).toLocaleTimeString();
+      const item = document.createElement('div');
+      item.className = 'feed-item';
+      item.setAttribute('role', 'article');
+      item.setAttribute('tabindex', '-1');
+      item.setAttribute('aria-label', `${spaceCall(spot.callsign)} in ${spot.country}, ${spot.mode}${spot.band ? ' on ' + spot.band : ''}`);
+      item.innerHTML = `
+        <div class="time">${time}</div>
+        <div class="content">
+          <span class="callsign">${esc(spot.callsign)}</span> &rarr;
+          <span class="country-name">${esc(spot.country)}</span>
+          <span class="mode-tag">${esc(spot.mode)}</span>
+        </div>
+        ${spot.message ? `<div class="message">${esc(spot.message)}</div>` : ''}
+      `;
+      return item;
+    }
+
+    // --- Mode totals rendering ---
+    function renderModeTotals(modeCounts) {
+      const el = document.getElementById('modeTotals');
+      const parts = [];
+      for (const mode of activeModes) {
+        const count = modeCounts.get(mode) || 0;
+        if (count > 0) {
+          parts.push(`<span class="mode-total">${mode}: <strong>${count}</strong></span>`);
+        }
+      }
+      el.innerHTML = parts.join('');
+    }
+
+    // --- Screen-freeze while navigating (accessibility) ---
+    // When voice/screen-reader mode is active and the user is navigating
+    // the country grid, freeze DOM updates for 10 seconds after the last
+    // cursor movement so the screen reader can read cards undisturbed.
+    let lastGridNav = 0;
+    let freezeTimer = null;
+    let freezeSuppressed = false; // prevents focus-restore from retriggering freeze
+    let pendingNewCountries = []; // { country, callsign, mode, band } for deferred announcements
+    const FREEZE_MS = 10000;
+
+    function isScreenFrozen() {
+      if (voiceMode.value === 'off') return false;
+      return (Date.now() - lastGridNav) < FREEZE_MS;
+    }
+
+    function resetFreezeTimer() {
+      lastGridNav = Date.now();
+      if (freezeTimer) clearTimeout(freezeTimer);
+      freezeTimer = setTimeout(() => {
+        // Freeze expired — catch up
+        freezeSuppressed = true;
+        rebuildDisplay();
+        freezeSuppressed = false;
+        // Announce any new countries that arrived during freeze
+        for (const nc of pendingNewCountries) {
+          announceCountry(nc.country, nc.callsign, nc.mode, nc.band, nc.grid);
+        }
+        pendingNewCountries = [];
+      }, FREEZE_MS);
+    }
+
+    // Use document-level capture-phase listeners for reliable detection
+    // (screen readers can intercept events before they bubble)
+    document.addEventListener('keydown', (e) => {
+      if (!freezeSuppressed && voiceMode.value !== 'off' && countryGrid.contains(e.target)) {
+        resetFreezeTimer();
+      }
+    }, true);
+
+    document.addEventListener('focusin', (e) => {
+      if (!freezeSuppressed && voiceMode.value !== 'off' && countryGrid.contains(e.target)) {
+        resetFreezeTimer();
+      }
+    }, true);
+
+    // --- Incremental update (new spot arrives) ---
+    // Track current filtered state for incremental updates
+    const currentCountries = new Map();
+    const currentCallsigns = new Set();
+    let currentSpotCount = 0;
+    const currentModeCounts = new Map();
+
+    function handleNewSpot(spot) {
+      // Store
+      allSpots.push(spot);
+      if (allSpots.length > MAX_SPOTS) allSpots.shift();
+
+      // Track grid per callsign
+      if (spot.grid) callsignGrids.set(spot.callsign, spot.grid);
+
+      // Check filter
+      if (!passesFilter(spot)) return;
+
+      currentSpotCount++;
+      currentCallsigns.add(spot.callsign);
+      currentModeCounts.set(spot.category, (currentModeCounts.get(spot.category) || 0) + 1);
+
+      const isNewCountry = !currentCountries.has(spot.country);
+      const existing = currentCountries.get(spot.country) || { count: 0, callsignModes: new Map(), bands: new Set() };
+      existing.count++;
+      existing.lastSeen = spot.timestamp;
+      if (!existing.callsignModes.has(spot.callsign)) {
+        existing.callsignModes.set(spot.callsign, new Set());
+      }
+      existing.callsignModes.get(spot.callsign).add(spot.mode);
+      if (spot.band) existing.bands.add(spot.band);
+      currentCountries.set(spot.country, existing);
+
+      // If screen is frozen for accessibility, defer DOM updates
+      if (isScreenFrozen()) {
+        if (isNewCountry) {
+          pendingNewCountries.push({ country: spot.country, callsign: spot.callsign, mode: spot.mode, band: spot.band, grid: spot.grid });
         }
         return;
       }
 
-      if (emptyState.parentNode) emptyState.remove();
+      // Update country card
+      renderCountryCard(spot.country, existing, true);
 
-      const card = document.createElement('div');
-      card.className = 'country-card' + (highlight ? ' highlight' : '');
-      card.id = safeId;
-      card.setAttribute('role', 'listitem');
-      card.setAttribute('aria-label', `${name}, ${data.count} spots`);
-      card.innerHTML = `
-        <div class="name">${name}</div>
-        <div class="meta">${data.callsigns.slice(-5).join(', ')} <span class="count">${data.count}</span></div>
-      `;
-
-      const cards = [...countryGrid.children];
-      const insertBefore = cards.find(c => c.querySelector('.name')?.textContent > name);
-      if (insertBefore) {
-        countryGrid.insertBefore(card, insertBefore);
-      } else {
-        countryGrid.appendChild(card);
-      }
-
-      if (highlight) setTimeout(() => card.classList.remove('highlight'), 2000);
-    }
-
-    function addFeedItem(country, callsign, band, snr, timestamp) {
-      const time = new Date(timestamp * 1000).toLocaleTimeString();
-      const item = document.createElement('div');
-      item.className = 'feed-item';
-      item.innerHTML = `
-        <div class="time">${time}</div>
-        <div class="content">
-          <span class="callsign">${callsign}</span> &rarr;
-          <span class="country-name">${country}</span>
-          <span class="band-tag">${band || ''}</span>
-          ${snr != null ? `<span class="snr-tag">${snr}dB</span>` : ''}
-        </div>
-      `;
+      // Add feed item
+      const item = makeFeedItem(spot);
       feedList.insertBefore(item, feedList.firstChild);
       while (feedList.children.length > 200) {
         feedList.removeChild(feedList.lastChild);
       }
+
+      // Update stats
+      document.getElementById('countryCount').textContent = currentCountries.size;
+      document.getElementById('callsignCount').textContent = currentCallsigns.size;
+      document.getElementById('spotCount').textContent = currentSpotCount;
+      renderModeTotals(currentModeCounts);
+
+      // Announce new country
+      if (isNewCountry) {
+        announceCountry(spot.country, spot.callsign, spot.mode, spot.band, spot.grid);
+      }
     }
 
-    // --- Band to frequency range mapping for MQTT topic filtering ---
-    const bandToFreq = {
-      '160m': '1', '80m': '3', '60m': '5', '40m': '7', '30m': '10',
-      '20m': '14', '17m': '18', '15m': '21', '12m': '24', '10m': '28',
-      '6m': '50', '2m': '144'
+    // Re-sort country cards in-place without destroying DOM elements (preserves focus)
+    function resortGridInPlace() {
+      // If the user has focus on a card, don't move any DOM nodes — appendChild
+      // detaches and reattaches nodes, which causes screen readers to lose their
+      // virtual cursor and re-read from the top of the page. The sort order will
+      // be corrected on the next full rebuild (filter change, freeze expiry, etc).
+      const focused = document.activeElement;
+      if (focused && focused !== countryGrid && countryGrid.contains(focused)) return;
+
+      const cards = [...countryGrid.querySelectorAll('.country-card')];
+      if (cards.length === 0) return;
+
+      const currentSort = sortMode.value;
+      const myPos = gridToLatLon(qthInput.value);
+
+      function getCardName(card) {
+        const n = card.querySelector('.name');
+        return n ? n.textContent.replace(/\d+.*$/, '').trim() : '';
+      }
+
+      function getCardCallsignCount(card) {
+        const countEl = card.querySelector('.count');
+        return countEl ? parseInt(countEl.textContent) || 0 : 0;
+      }
+
+      function getCardDist(card) {
+        const name = getCardName(card);
+        const data = currentCountries.get(name);
+        if (!data || !myPos) return -1;
+        let totalDist = 0, gridCount = 0;
+        for (const call of data.callsignModes.keys()) {
+          const g = callsignGrids.get(call);
+          if (g) {
+            const pos = gridToLatLon(g);
+            if (pos) {
+              totalDist += haversineKm(myPos.lat, myPos.lon, pos.lat, pos.lon);
+              gridCount++;
+            }
+          }
+        }
+        return gridCount > 0 ? totalDist / gridCount : -1;
+      }
+
+      cards.sort((a, b) => {
+        if (currentSort === 'spots') {
+          return getCardCallsignCount(a) - getCardCallsignCount(b);
+        } else if (currentSort === 'mostspots') {
+          return getCardCallsignCount(b) - getCardCallsignCount(a);
+        } else if (currentSort === 'distance') {
+          return getCardDist(b) - getCardDist(a);
+        } else if (currentSort === 'closest') {
+          const da = getCardDist(a), db = getCardDist(b);
+          if (da < 0 && db < 0) return 0;
+          if (da < 0) return 1;
+          if (db < 0) return -1;
+          return da - db;
+        } else {
+          return getCardName(a).localeCompare(getCardName(b));
+        }
+      });
+
+      // Re-append in sorted order (moves existing nodes, preserves focus)
+      for (const card of cards) {
+        countryGrid.appendChild(card);
+      }
+    }
+
+    function renderCountryCard(name, data, highlight) {
+      const id = 'country-' + name.replace(/[^a-zA-Z0-9]/g, '_');
+      const skipDist = SKIP_DIST.includes(name);
+      const dist = skipDist ? -1 : countryDist(data);
+      const distLabel = (dist > 0)
+        ? ` <span class="count">${formatDist(dist)}</span>` : '';
+      const bands = formatBands(data.bands);
+
+      const existingEl = document.getElementById(id);
+      if (existingEl) {
+        // Don't update a card the user is currently focused on — changing
+        // innerHTML or aria-label on the focused element causes screen readers
+        // to re-announce it (and sometimes re-read the entire page context).
+        if (existingEl !== document.activeElement) {
+          existingEl.querySelector('.name').innerHTML = `${esc(name)} <span class="count">${data.callsignModes.size}</span>${distLabel}`;
+          existingEl.querySelector('.callsign-list').innerHTML = renderCallsignModes(data.callsignModes);
+          const bandCol = existingEl.querySelector('.band-col');
+          if (bandCol) bandCol.innerHTML = bands.html;
+          else if (bands.html) {
+            const col = document.createElement('div');
+            col.className = 'band-col';
+            col.innerHTML = bands.html;
+            existingEl.querySelector('.card-body').appendChild(col);
+          }
+          const modes = uniqueModes(data.callsignModes);
+          existingEl.setAttribute('aria-label', `${name}, ${modes.text}${bands.speech ? ', ' + bands.speech : ''}${dist > 0 ? ', ' + speakDist(dist) : ''}`);
+        }
+        if (highlight) {
+          existingEl.classList.add('highlight');
+          setTimeout(() => existingEl.classList.remove('highlight'), 2000);
+        }
+        return;
+      }
+
+      // Remove empty state
+      const empty = countryGrid.querySelector('.empty-state');
+      if (empty) empty.remove();
+
+      const card = document.createElement('div');
+      card.className = 'country-card' + (highlight ? ' highlight' : '');
+      card.id = id;
+      card.setAttribute('tabindex', '0');
+      const modes = uniqueModes(data.callsignModes);
+      card.setAttribute('aria-label', `${name}, ${modes.text}${bands.speech ? ', ' + bands.speech : ''}${dist > 0 ? ', ' + speakDist(dist) : ''}`);
+      card.innerHTML = `
+        <div aria-hidden="true">
+          <div class="name">${esc(name)} <span class="count">${data.callsignModes.size}</span>${distLabel}</div>
+          <div class="card-body">
+            <div class="card-main">
+              <div class="callsign-list">${renderCallsignModes(data.callsignModes)}</div>
+            </div>
+            ${bands.html ? `<div class="band-col">${bands.html}</div>` : ''}
+          </div>
+        </div>
+      `;
+
+      if (sortMode.value === 'alpha') {
+        // Insert alphabetically without rebuild
+        const cards = [...countryGrid.children];
+        const insertBefore = cards.find(c => {
+          const n = c.querySelector('.name');
+          return n && n.textContent > name;
+        });
+        if (insertBefore) {
+          countryGrid.insertBefore(card, insertBefore);
+        } else {
+          countryGrid.appendChild(card);
+        }
+      } else {
+        // Non-alpha sorts: append the card, then re-sort existing cards in place
+        // This avoids innerHTML nuke which destroys focus
+        countryGrid.appendChild(card);
+        resortGridInPlace();
+      }
+
+      if (highlight) {
+        setTimeout(() => card.classList.remove('highlight'), 2000);
+      }
+    }
+
+    // When mode filters change, do a full rebuild and reset incremental state
+    const origRebuild = rebuildDisplay;
+    // Make grid focusable so we can park focus there during rebuilds
+    countryGrid.setAttribute('tabindex', '-1');
+    rebuildDisplay = function() {
+      // Preserve focus across rebuild
+      const focused = document.activeElement;
+      const focusId = (focused && countryGrid.contains(focused)) ? focused.id : null;
+
+      // Park focus on the grid container and mark busy so the screen reader
+      // doesn't wander into the feed panel while cards are being rebuilt
+      if (focusId) countryGrid.focus({ preventScroll: true });
+      countryGrid.setAttribute('aria-busy', 'true');
+
+      origRebuild();
+      // Reset incremental tracking to match rebuilt state
+      currentCountries.clear();
+      currentCallsigns.clear();
+      currentSpotCount = 0;
+      currentModeCounts.clear();
+      callsignGrids.clear();
+      for (const spot of allSpots) {
+        if (spot.grid) callsignGrids.set(spot.callsign, spot.grid);
+        if (!passesFilter(spot)) continue;
+        currentSpotCount++;
+        currentCallsigns.add(spot.callsign);
+        currentModeCounts.set(spot.category, (currentModeCounts.get(spot.category) || 0) + 1);
+        const ex = currentCountries.get(spot.country) || { count: 0, callsignModes: new Map(), bands: new Set() };
+        ex.count++;
+        ex.lastSeen = spot.timestamp;
+        if (!ex.callsignModes.has(spot.callsign)) {
+          ex.callsignModes.set(spot.callsign, new Set());
+        }
+        ex.callsignModes.get(spot.callsign).add(spot.mode);
+        if (spot.band) ex.bands.add(spot.band);
+        currentCountries.set(spot.country, ex);
+      }
+
+      countryGrid.removeAttribute('aria-busy');
+
+      // Restore focus to the same card
+      if (focusId) {
+        const el = document.getElementById(focusId);
+        if (el) el.focus();
+      }
     };
 
-    // --- MQTT topic builder ---
-    function buildTopic() {
-      // pskr/filter/v2/{band}/{mode}/{senderCall}/{receiverCall}/{senderGrid}/{receiverGrid}/{senderCountry}/{receiverCountry}
-      const band = bandSelect.value === 'all' ? '+' : bandSelect.value;
-      const mode = modeSelect.value === 'all' ? '+' : modeSelect.value;
-      return `pskr/filter/v2/${band}/${mode}/+/+/+/+/+/+`;
+    // --- WebSocket connection ---
+    // --- Process a spot from g7vrd STOMP feed ---
+    function processStompSpot(callsign, country, mode, band, message, grid) {
+      if (!callsign || !mode) return;
+      const resolvedCountry = lookupCountry(callsign) || country;
+      if (!resolvedCountry) return;
+      const resolvedGrid = grid || ENTITY_GRIDS[resolvedCountry] || '';
+      const category = categorizeMode(mode);
+      handleNewSpot({
+        callsign: callsign.toUpperCase(),
+        country: resolvedCountry,
+        mode,
+        category,
+        band: band || '',
+        grid: resolvedGrid,
+        message: message || '',
+        timestamp: new Date().toISOString(),
+      });
     }
 
-    let currentTopic = null;
+    function connect() {
+      const stompClient = new StompJs.Client({
+        brokerURL: 'wss://ws.g7vrd.co.uk/dx/websocket',
+        reconnectDelay: 5000,
+        heartbeatIncoming: 0,
+        heartbeatOutgoing: 0,
+      });
 
-    function reconnect() {
-      if (mqttClient && currentTopic) {
-        mqttClient.unsubscribe(currentTopic);
-      }
-      // Clear state on band/mode change
-      countries.clear();
-      totalCallsigns.clear();
-      spotCount = 0;
-      countryGrid.innerHTML = '';
-      feedList.innerHTML = '';
-      const es = document.createElement('div');
-      es.className = 'empty-state';
-      es.id = 'emptyState';
-      es.innerHTML = '<h3>Switching feed...</h3><p>Waiting for spots</p>';
-      countryGrid.appendChild(es);
-      updateStats();
-
-      currentTopic = buildTopic();
-      if (mqttClient && mqttClient.connected) {
-        mqttClient.subscribe(currentTopic, (err) => {
-          if (!err) {
-            statusText.textContent = `Connected (${bandSelect.value} / ${modeSelect.value})`;
-          }
-        });
-      }
-    }
-
-    // --- MQTT connection ---
-    function connectMqtt() {
-      statusText.textContent = 'Connecting...';
-
-      mqttClient = mqtt.connect('wss://mqtt.pskreporter.info:1886');
-
-      mqttClient.on('connect', () => {
+      stompClient.onConnect = () => {
         statusDot.classList.add('connected');
-        currentTopic = buildTopic();
-        mqttClient.subscribe(currentTopic, (err) => {
-          if (err) {
-            statusText.textContent = 'Subscribe error';
-          } else {
-            statusText.textContent = `Connected (${bandSelect.value} / ${modeSelect.value})`;
-          }
+        statusText.textContent = 'Connected to g7vrd';
+
+        // PSK Reporter spots (FT8/FT4/etc.)
+        stompClient.subscribe('/topic/psks/v1', (message) => {
+          try {
+            const spot = JSON.parse(message.body);
+            const callsign = spot.tx && spot.tx.callsign;
+            const country = spot.tx && spot.tx.country;
+            const mode = (spot.mode || '').toUpperCase();
+            const band = spot.band || '';
+            if (callsign && country && mode) {
+              const grid = (spot.tx && spot.tx.grid) || '';
+              const msg = spot.db != null ? `${spot.db}dB` : '';
+              processStompSpot(callsign, country, mode, band, msg, grid);
+            }
+          } catch (e) {}
         });
-      });
 
-      mqttClient.on('message', (topic, payload) => {
-        try {
-          const spot = JSON.parse(payload.toString());
-          handleSpot(spot);
-        } catch (e) {
-          // ignore malformed
-        }
-      });
+        // DX cluster spots
+        stompClient.subscribe('/topic/spots/v1', (message) => {
+          try {
+            const spot = JSON.parse(message.body);
+            const callsign = (spot.remote && spot.remote.callsign)
+              || spot.dx || spot.dxCallsign;
+            const country = (spot.remote && spot.remote.country)
+              || spot.dxCountry;
+            const band = spot.band || '';
+            const mode = (spot.mode || inferMode(spot.hz, spot.note) || '').toUpperCase();
+            if (callsign && country && mode) {
+              const grid = spot.grid
+                || (spot.remote && spot.remote.grid)
+                || '';
+              const msg = spot.note || '';
+              processStompSpot(callsign, country, mode, band, msg, grid);
+            }
+          } catch (e) {}
+        });
 
-      mqttClient.on('error', (err) => {
-        console.warn('MQTT error:', err);
-        statusText.textContent = 'Connection error';
-      });
+        // Skimmer data (CW, RTTY, etc.)
+        stompClient.subscribe('/topic/skims/v1', (message) => {
+          try {
+            const spot = JSON.parse(message.body);
+            const callsign = spot.call && spot.call.callsign;
+            const country = spot.call && spot.call.country;
+            const mode = (spot.mode || '').toUpperCase();
+            const band = spot.band || '';
+            if (callsign && country && mode) {
+              const grid = (spot.call && spot.call.grid) || '';
+              const msg = [spot.db != null ? `${spot.db}dB` : '', spot.speed ? `${spot.speed}WPM` : '']
+                .filter(Boolean).join(' ');
+              processStompSpot(callsign, country, mode, band, msg, grid);
+            }
+          } catch (e) {}
+        });
 
-      mqttClient.on('offline', () => {
+        // WSPR spots
+        stompClient.subscribe('/topic/wsprs/v1', (message) => {
+          try {
+            const data = JSON.parse(message.body);
+            const spots = Array.isArray(data) ? data : [data];
+            for (const spot of spots) {
+              const callsign = spot.callsign || (spot.tx && spot.tx.callsign);
+              const country = spot.country || (spot.tx && spot.tx.country);
+              const band = spot.band || '';
+              if (callsign && country) {
+                const grid = (spot.tx && spot.tx.grid) || spot.grid || '';
+                const msg = spot.power != null ? `${spot.power}dBm` : '';
+                processStompSpot(callsign, country, 'WSPR', band, msg, grid);
+              }
+            }
+          } catch (e) {}
+        });
+      };
+
+      stompClient.onStompError = (frame) => {
+        console.error('STOMP error:', frame.headers['message'], frame.body);
+      };
+
+      stompClient.onWebSocketClose = () => {
         statusDot.classList.remove('connected');
         statusText.textContent = 'Disconnected - reconnecting...';
-      });
+      };
 
-      mqttClient.on('reconnect', () => {
-        statusText.textContent = 'Reconnecting...';
-      });
+      stompClient.onWebSocketError = (err) => {
+        console.error('g7vrd WebSocket error:', err.message || err);
+      };
+
+      stompClient.activate();
     }
 
-    // De-dupe by sequence number
-    const seenSeqs = new Set();
-    const MAX_SEEN = 5000;
-
-    function handleSpot(spot) {
-      // Fields: sc (sender call), rc (receiver call), f (freq), md (mode),
-      //         b (band), t (timestamp), sl (sender grid), rl (receiver grid),
-      //         rp (snr), sq (sequence)
-      const callsign = spot.sc;
-      if (!callsign) return;
-
-      // De-dupe
-      if (spot.sq) {
-        if (seenSeqs.has(spot.sq)) return;
-        seenSeqs.add(spot.sq);
-        if (seenSeqs.size > MAX_SEEN) {
-          const it = seenSeqs.values();
-          for (let i = 0; i < 1000; i++) {
-            seenSeqs.delete(it.next().value);
-          }
-        }
+    // Ctrl+S: focus first country card
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        const first = countryGrid.querySelector('.country-card');
+        if (first) first.focus();
       }
+    });
 
-      const country = lookupCountry(callsign);
-      if (!country) return;
-
-      spotCount++;
-      totalCallsigns.add(callsign.toUpperCase());
-      const isNewCountry = !countries.has(country);
-
-      const existing = countries.get(country) || { count: 0, callsigns: [] };
-      existing.count++;
-      if (!existing.callsigns.includes(callsign.toUpperCase())) {
-        existing.callsigns.push(callsign.toUpperCase());
-      }
-      existing.lastSeen = spot.t;
-      countries.set(country, existing);
-
-      renderCountryCard(country, existing, true);
-      addFeedItem(country, callsign, spot.b, spot.rp, spot.t);
-      updateStats();
-
-      if (isNewCountry) {
-        announceCountry(country, callsign);
-      }
-    }
-
-    // --- Start ---
-    connectMqtt();
+    connect();
   </script>
 </body>
 </html>
