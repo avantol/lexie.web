@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Lexie - DX Country Spotter v0.1</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0a0e17;
+      color: #e0e0e0;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1f35, #0d1220);
+      border-bottom: 1px solid #2a3a5c;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    header h1 {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: #7eb8ff;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ff4444;
+      transition: background 0.3s;
+    }
+
+    .status-dot.connected { background: #44ff88; }
+
+    .voice-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .voice-controls label {
+      font-size: 0.85rem;
+      color: #8899bb;
+    }
+
+    .voice-controls select {
+      background: #1a2240;
+      color: #e0e0e0;
+      border: 1px solid #2a3a5c;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .voice-controls select:focus {
+      outline: 2px solid #4a8aff;
+      outline-offset: 1px;
+    }
+
+    .qth-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .qth-controls label {
+      font-size: 0.85rem;
+      color: #8899bb;
+    }
+
+    .qth-controls select {
+      background: #1a2240;
+      color: #e0e0e0;
+      border: 1px solid #2a3a5c;
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .qth-controls select:focus,
+    .qth-controls input:focus {
+      outline: 2px solid #4a8aff;
+      outline-offset: 1px;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .mode-filters {
+      display: flex;
+      gap: 8px;
+      padding: 10px 24px;
+      background: #0d1220;
+      border-bottom: 1px solid #1a2540;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .mode-filters span {
+      font-size: 0.8rem;
+      color: #667799;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-right: 4px;
+    }
+
+    .mode-btn {
+      background: #1a2240;
+      color: #667799;
+      border: 1px solid #2a3a5c;
+      border-radius: 4px;
+      padding: 4px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mode-btn:hover {
+      border-color: #4a6a9c;
+      color: #8899bb;
+    }
+
+    .mode-btn.active {
+      background: #2a3a5c;
+      color: #7eb8ff;
+      border-color: #4a8aff;
+    }
+
+    .stats {
+      display: flex;
+      gap: 16px;
+      padding: 10px 24px;
+      background: #0d1220;
+      border-bottom: 1px solid #1a2540;
+      font-size: 0.85rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .stat { color: #8899bb; }
+    .stat strong { color: #7eb8ff; font-size: 1rem; }
+
+    .mode-totals {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-left: 8px;
+      padding-left: 12px;
+      border-left: 1px solid #1a2540;
+    }
+
+    .mode-total {
+      font-size: 0.75rem;
+      color: #667799;
+    }
+
+    .mode-total strong {
+      color: #aabbdd;
+      font-size: 0.8rem;
+    }
+
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 0;
+      height: calc(100vh - 190px);
+    }
+
+    .countries-panel {
+      padding: 16px;
+      overflow-y: auto;
+    }
+
+    .countries-panel h2 {
+      font-size: 1rem;
+      color: #8899bb;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .country-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .country-card {
+      background: linear-gradient(135deg, #151c30, #1a2240);
+      border: 1px solid #2a3a5c;
+      border-radius: 8px;
+      padding: 10px 14px;
+      min-width: 160px;
+      transition: all 0.3s;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    .country-card:focus {
+      outline: 2px solid #7eb8ff;
+      outline-offset: 2px;
+    }
+
+    .country-card.highlight {
+      border-color: #4a8aff;
+      box-shadow: 0 0 16px rgba(74, 138, 255, 0.3);
+    }
+
+    .country-card .name {
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: #e8f0ff;
+    }
+
+    .country-card .meta {
+      font-size: 0.75rem;
+      color: #667799;
+      margin-top: 4px;
+    }
+
+    .country-card .count {
+      display: inline-block;
+      background: #2a3a5c;
+      color: #7eb8ff;
+      border-radius: 10px;
+      padding: 1px 8px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+
+    .country-card .card-body {
+      display: flex;
+      gap: 8px;
+      margin-top: 5px;
+    }
+
+    .country-card .card-main {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .country-card .band-col {
+      display: grid;
+      grid-template-rows: repeat(3, auto);
+      grid-auto-flow: column;
+      gap: 1px;
+      flex-shrink: 0;
+      align-content: start;
+      border-left: 1px solid #2a3a5c;
+      padding-left: 8px;
+    }
+
+    .country-card .band-pill {
+      font-size: 0.6rem;
+      font-weight: 600;
+      padding: 0 5px;
+      border-radius: 2px;
+      color: #8cb4e0;
+      background: #1a2a4a;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    .country-card .callsign-list {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .country-card .callsign-entry {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.75rem;
+    }
+
+    .country-card .callsign-entry .call {
+      color: #ffcc44;
+      font-family: monospace;
+      font-weight: 500;
+    }
+
+    .country-card .callsign-entry .mode-pill {
+      font-size: 0.55rem;
+      font-weight: 600;
+      padding: 0 4px;
+      border-radius: 2px;
+      color: #e0e0e0;
+      background: #2a3a5c;
+    }
+
+    .mode-pill.mode-ft8 { background: #2d5a1e; }
+    .mode-pill.mode-ft4 { background: #1e4a5a; }
+    .mode-pill.mode-cw { background: #5a3a1e; }
+    .mode-pill.mode-ssb { background: #5a1e3a; }
+    .mode-pill.mode-rtty { background: #3a1e5a; }
+    .mode-pill.mode-psk { background: #1e3a5a; }
+    .mode-pill.mode-varac { background: #4a3a1e; }
+    .mode-pill.mode-jt65 { background: #1e5a3a; }
+    .mode-pill.mode-q65 { background: #3a5a1e; }
+    .mode-pill.mode-js8 { background: #1e3a3a; }
+    .mode-pill.mode-wspr { background: #5a1e5a; }
+    .mode-pill.mode-msk144 { background: #3a3a1e; }
+    .mode-pill.mode-freedv { background: #2a4a3a; }
+
+    .feed-panel {
+      background: #0d1220;
+      border-left: 1px solid #1a2540;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .feed-panel h2 {
+      font-size: 1rem;
+      color: #8899bb;
+      padding: 16px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border-bottom: 1px solid #1a2540;
+    }
+
+    .feed-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px;
+    }
+
+    .feed-item {
+      padding: 8px 12px;
+      border-bottom: 1px solid #131a2e;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    .feed-item .time {
+      font-size: 0.7rem;
+      color: #556688;
+      font-family: monospace;
+    }
+
+    .feed-item .content {
+      font-size: 0.85rem;
+      margin-top: 2px;
+    }
+
+    .feed-item .country-name {
+      color: #7eb8ff;
+      font-weight: 600;
+    }
+
+    .feed-item .callsign {
+      color: #ffcc44;
+      font-family: monospace;
+      font-weight: 500;
+    }
+
+    .feed-item .mode-tag {
+      font-size: 0.65rem;
+      color: #0a0e17;
+      background: #667799;
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-weight: 600;
+      margin-left: 6px;
+    }
+
+    .feed-item .message {
+      font-size: 0.75rem;
+      color: #556688;
+      font-family: monospace;
+      margin-top: 2px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #445577;
+    }
+
+    .empty-state h3 {
+      font-size: 1.2rem;
+      margin-bottom: 8px;
+      color: #556699;
+    }
+
+    .empty-state p {
+      font-size: 0.9rem;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(20px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 300px;
+      }
+      .feed-panel { border-left: none; border-top: 1px solid #1a2540; }
+    }
+  </style>
+</head>
+<body>
+  <header role="banner">
+    <h1>Lexie - DX Country Spotter v0.1</h1>
+    <div class="voice-controls" role="group" aria-label="Voice announcement controls">
+      <label for="voiceMode">Announce:</label>
+      <select id="voiceMode" aria-label="Voice announcement mode">
+        <option value="off">Off</option>
+        <option value="self-voice">Self-voice (TTS)</option>
+        <option value="screen-reader">Screen reader</option>
+      </select>
+      <button id="testVoice" aria-label="Test voice announcement"
+        style="background:#2a3a5c; color:#e0e0e0; border:1px solid #3a4a6c; border-radius:4px;
+               padding:4px 10px; font-size:0.8rem; cursor:pointer;">Test</button>
+    </div>
+    <div class="qth-controls" role="group" aria-label="QTH and sort controls">
+      <label for="qthInput">QTH:</label>
+      <input type="text" id="qthInput" maxlength="4" placeholder="EM09" value="EM09"
+        aria-label="Your QTH Maidenhead grid locator"
+        style="background:#1a2240; color:#e0e0e0; border:1px solid #2a3a5c; border-radius:4px;
+               padding:4px 8px; font-size:0.8rem; width:55px; text-transform:uppercase; font-family:monospace;">
+      <label for="sortMode">Sort:</label>
+      <select id="sortMode" aria-label="Card sort order">
+        <option value="alpha">A-Z</option>
+        <option value="spots">Least spots</option>
+        <option value="mostspots">Most spots</option>
+        <option value="closest">Closest</option>
+        <option value="distance">Most distant</option>
+      </select>
+    </div>
+    <div class="status">
+      <div class="status-dot" id="statusDot" role="status" aria-label="Connection status"></div>
+      <span id="statusText">Disconnected</span>
+    </div>
+  </header>
+
+  <!-- ARIA live region for screen reader announcements -->
+  <div id="srAnnounce" class="sr-only" aria-live="polite" aria-atomic="true" role="status"></div>
+
+  <div class="mode-filters" role="toolbar" aria-label="Mode filters">
+    <span>Modes:</span>
+    <button class="mode-btn active" data-mode="FT8" aria-pressed="true" aria-label="Filter FT8 mode">FT8</button>
+    <button class="mode-btn active" data-mode="FT4" aria-pressed="true" aria-label="Filter FT4 mode">FT4</button>
+    <button class="mode-btn active" data-mode="FT2" aria-pressed="true" aria-label="Filter FT2 mode">FT2</button>
+    <button class="mode-btn active" data-mode="CW" aria-pressed="true" aria-label="Filter CW mode">CW</button>
+    <button class="mode-btn active" data-mode="SSB" aria-pressed="true" aria-label="Filter SSB mode">SSB</button>
+    <button class="mode-btn active" data-mode="RTTY" aria-pressed="true" aria-label="Filter RTTY mode">RTTY</button>
+    <button class="mode-btn active" data-mode="PSK" aria-pressed="true" aria-label="Filter PSK mode">PSK</button>
+    <button class="mode-btn active" data-mode="VARAC" aria-pressed="true" aria-label="Filter VARAC mode">VARAC</button>
+    <button class="mode-btn active" data-mode="JT65" aria-pressed="true" aria-label="Filter JT65 mode">JT65</button>
+    <button class="mode-btn active" data-mode="Q65" aria-pressed="true" aria-label="Filter Q65 mode">Q65</button>
+    <button class="mode-btn active" data-mode="JS8" aria-pressed="true" aria-label="Filter JS8 mode">JS8</button>
+    <button class="mode-btn active" data-mode="WSPR" aria-pressed="true" aria-label="Filter WSPR mode">WSPR</button>
+    <button class="mode-btn active" data-mode="MSK144" aria-pressed="true" aria-label="Filter MSK144 mode">MSK144</button>
+    <button class="mode-btn active" data-mode="FREEDV" aria-pressed="true" aria-label="Filter FreeDV mode">FreeDV</button>
+  </div>
+
+  <div class="mode-filters" role="toolbar" aria-label="Band filters">
+    <span>Bands:</span>
+    <button class="mode-btn active" data-band="160m" aria-pressed="true" aria-label="Filter 160 meter band">160m</button>
+    <button class="mode-btn active" data-band="80m" aria-pressed="true" aria-label="Filter 80 meter band">80m</button>
+    <button class="mode-btn active" data-band="60m" aria-pressed="true" aria-label="Filter 60 meter band">60m</button>
+    <button class="mode-btn active" data-band="40m" aria-pressed="true" aria-label="Filter 40 meter band">40m</button>
+    <button class="mode-btn active" data-band="30m" aria-pressed="true" aria-label="Filter 30 meter band">30m</button>
+    <button class="mode-btn active" data-band="20m" aria-pressed="true" aria-label="Filter 20 meter band">20m</button>
+    <button class="mode-btn active" data-band="17m" aria-pressed="true" aria-label="Filter 17 meter band">17m</button>
+    <button class="mode-btn active" data-band="15m" aria-pressed="true" aria-label="Filter 15 meter band">15m</button>
+    <button class="mode-btn active" data-band="12m" aria-pressed="true" aria-label="Filter 12 meter band">12m</button>
+    <button class="mode-btn active" data-band="10m" aria-pressed="true" aria-label="Filter 10 meter band">10m</button>
+    <button class="mode-btn active" data-band="6m" aria-pressed="true" aria-label="Filter 6 meter band">6m</button>
+  </div>
+
+  <div class="stats" role="region" aria-label="Spot statistics">
+    <div class="stat" aria-label="Countries heard">Countries: <strong id="countryCount">0</strong></div>
+    <div class="stat" aria-label="Unique callsigns">Callsigns: <strong id="callsignCount">0</strong></div>
+    <div class="stat" aria-label="Total spots">Spots: <strong id="spotCount">0</strong></div>
+    <div class="mode-totals" id="modeTotals" aria-label="Spots per mode"></div>
+  </div>
+
+  <div class="container" role="main" aria-label="DX Country Spotter">
+    <div class="countries-panel" role="region" aria-label="Countries heard panel">
+      <h2>Countries Heard</h2>
+      <div class="country-grid" id="countryGrid" aria-label="Countries heard">
+        <div class="empty-state" id="emptyState">
+          <h3>Waiting for spots...</h3>
+          <p>Select modes above and spots will appear from the g7vrd live feed</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="feed-panel" role="region" aria-label="Live spot feed panel" tabindex="-1">
+      <h2>Live Feed</h2>
+      <div class="feed-list" id="feedList" role="log" aria-live="off" aria-label="Live spot feed" tabindex="-1"></div>
+    </div>
+  </div>
+
+  <script>
+    // --- Mode filter state ---
+    // Map mode names from g7vrd to our filter categories
+    function categorizeMode(mode) {
+      const m = mode.toUpperCase();
+      if (m === 'FT8') return 'FT8';
+      if (m === 'FT4') return 'FT4';
+      if (m === 'FT2') return 'FT2';
+      if (m === 'CW') return 'CW';
+      if (m === 'SSB' || m === 'USB' || m === 'LSB' || m === 'AM' || m === 'FM' || m === 'PHONE') return 'SSB';
+      if (m === 'RTTY' || m === 'BAUDOT') return 'RTTY';
+      if (m === 'VARAC') return 'VARAC';
+      if (m === 'JT65' || m === 'JT9') return 'JT65';
+      if (m === 'Q65') return 'Q65';
+      if (m === 'JS8') return 'JS8';
+      if (m === 'WSPR' || m === 'FST4W') return 'WSPR';
+      if (m === 'MSK144') return 'MSK144';
+      if (m === 'FREEDV') return 'FREEDV';
+      // Catch remaining digital/PSK modes
+      if (m.startsWith('PSK') || m === 'OLIVIA' || m === 'MFSK' || m === 'SSTV'
+          || m === 'HELL' || m === 'ROS' || m === 'DOMINO' || m === 'CONTESTI'
+          || m === 'THROB' || m === 'FSQ' || m === 'OPERA' || m === 'FST4') return 'PSK';
+      if (m.includes('PSK')) return 'PSK';
+      if (m.includes('CW')) return 'CW';
+      if (m.includes('SSB') || m.includes('PHONE')) return 'SSB';
+      if (m.includes('RTTY')) return 'RTTY';
+      return 'PSK';
+    }
+
+    const activeModes = new Set(['FT8', 'FT4', 'FT2', 'CW', 'SSB', 'RTTY', 'PSK', 'VARAC', 'JT65', 'Q65', 'JS8', 'WSPR', 'MSK144', 'FREEDV']);
+
+    // Load saved mode preferences
+    const savedModes = localStorage.getItem('activeModes');
+    if (savedModes) {
+      try {
+        const parsed = JSON.parse(savedModes);
+        activeModes.clear();
+        parsed.forEach(m => activeModes.add(m));
+      } catch (e) {}
+    }
+
+    // Initialize mode buttons
+    document.querySelectorAll('.mode-btn[data-mode]').forEach(btn => {
+      const mode = btn.dataset.mode;
+      if (activeModes.has(mode)) {
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
+      } else {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-pressed', 'false');
+      }
+      btn.addEventListener('click', () => {
+        btn.classList.toggle('active');
+        if (activeModes.has(mode)) {
+          activeModes.delete(mode);
+          btn.setAttribute('aria-pressed', 'false');
+        } else {
+          activeModes.add(mode);
+          btn.setAttribute('aria-pressed', 'true');
+        }
+        localStorage.setItem('activeModes', JSON.stringify([...activeModes]));
+        rebuildDisplay();
+      });
+    });
+
+    // --- Band filter state ---
+    const ALL_BANDS = ['160m', '80m', '60m', '40m', '30m', '20m', '17m', '15m', '12m', '10m', '6m'];
+    const activeBands = new Set(ALL_BANDS);
+
+    // Load saved band preferences
+    const savedBands = localStorage.getItem('activeBands');
+    if (savedBands) {
+      try {
+        const parsed = JSON.parse(savedBands);
+        activeBands.clear();
+        parsed.forEach(b => activeBands.add(b));
+      } catch (e) {}
+    }
+
+    // Initialize band buttons
+    document.querySelectorAll('.mode-btn[data-band]').forEach(btn => {
+      const band = btn.dataset.band;
+      if (activeBands.has(band)) {
+        btn.classList.add('active');
+        btn.setAttribute('aria-pressed', 'true');
+      } else {
+        btn.classList.remove('active');
+        btn.setAttribute('aria-pressed', 'false');
+      }
+      btn.addEventListener('click', () => {
+        btn.classList.toggle('active');
+        if (activeBands.has(band)) {
+          activeBands.delete(band);
+          btn.setAttribute('aria-pressed', 'false');
+        } else {
+          activeBands.add(band);
+          btn.setAttribute('aria-pressed', 'true');
+        }
+        localStorage.setItem('activeBands', JSON.stringify([...activeBands]));
+        rebuildDisplay();
+      });
+    });
+
+    // --- QTH and sort state ---
+    const qthInput = document.getElementById('qthInput');
+    const sortMode = document.getElementById('sortMode');
+
+    const savedQth = localStorage.getItem('myQth');
+    if (savedQth) qthInput.value = savedQth;
+
+    const savedSort = localStorage.getItem('sortMode');
+    if (savedSort) sortMode.value = savedSort;
+
+    qthInput.addEventListener('input', () => {
+      const v = qthInput.value.toUpperCase();
+      qthInput.value = v;
+      if (v.length === 4) {
+        localStorage.setItem('myQth', v);
+        rebuildDisplay();
+      }
+    });
+
+    sortMode.addEventListener('change', () => {
+      localStorage.setItem('sortMode', sortMode.value);
+      rebuildDisplay();
+    });
+
+    // --- Maidenhead grid to lat/lon ---
+    function gridToLatLon(grid) {
+      if (!grid || grid.length < 4) return null;
+      const g = grid.toUpperCase();
+      const lon = (g.charCodeAt(0) - 65) * 20 - 180
+                + parseInt(g[2]) * 2
+                + 1; // center of subsquare
+      const lat = (g.charCodeAt(1) - 65) * 10 - 90
+                + parseInt(g[3]) * 1
+                + 0.5; // center of subsquare
+      return { lat, lon };
+    }
+
+    // --- Haversine distance (km) ---
+    function haversineKm(lat1, lon1, lat2, lon2) {
+      const R = 6371;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(dLat / 2) ** 2
+              + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180)
+              * Math.sin(dLon / 2) ** 2;
+      return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    // Check if QTH grid is in the contiguous US (lat 24-50, lon -125 to -66)
+    function isUsGrid(grid) {
+      const pos = gridToLatLon(grid);
+      if (!pos) return false;
+      return pos.lat >= 24 && pos.lat <= 50 && pos.lon >= -125 && pos.lon <= -66;
+    }
+
+    // Format distance with appropriate units
+    function formatDist(km) {
+      if (isUsGrid(qthInput.value)) {
+        return Math.round(km * 0.621371 / 10) * 10 + 'mi';
+      }
+      return Math.round(km / 10) * 10 + 'km';
+    }
+
+    // Speech-friendly distance: "X hundred Y miles" instead of raw number
+    function speakDist(km) {
+      if (isUsGrid(qthInput.value)) {
+        const miles = Math.round(km * 0.621371 / 10) * 10;
+        if (miles < 100) return miles + ' miles';
+        const hundreds = Math.floor(miles / 100);
+        const remainder = miles % 100;
+        if (remainder === 0) return hundreds + ' hundred miles';
+        return hundreds + ' hundred ' + remainder + ' miles';
+      }
+      const rounded = Math.round(km / 10) * 10;
+      if (rounded < 100) return rounded + ' kilometers';
+      const hundreds = Math.floor(rounded / 100);
+      const remainder = rounded % 100;
+      if (remainder === 0) return hundreds + ' hundred kilometers';
+      return hundreds + ' hundred ' + remainder + ' kilometers';
+    }
+
+    // Track best grid per callsign (most recent)
+    const callsignGrids = new Map();
+
+    // Countries where distance display is suppressed (domestic)
+    const SKIP_DIST = ['United States', 'Canada', 'Mexico'];
+
+    // Compute average distance (km) from QTH to a country's callsigns
+    function countryDist(data) {
+      const myPos = gridToLatLon(qthInput.value);
+      if (!myPos) return -1;
+      let totalDist = 0, gridCount = 0;
+      for (const call of data.callsignModes.keys()) {
+        const g = callsignGrids.get(call);
+        if (g) {
+          const pos = gridToLatLon(g);
+          if (pos) {
+            totalDist += haversineKm(myPos.lat, myPos.lon, pos.lat, pos.lon);
+            gridCount++;
+          }
+        }
+      }
+      return gridCount > 0 ? totalDist / gridCount : -1;
+    }
+
+    // --- Filter helper ---
+    function passesFilter(spot) {
+      if (!activeModes.has(spot.category)) return false;
+      // If spot has a band, it must be in activeBands; spots without band info always pass
+      if (spot.band && !activeBands.has(spot.band)) return false;
+      return true;
+    }
+
+    // --- Data store: all spots, unfiltered ---
+    const allSpots = []; // { callsign, country, mode, category, band, grid, message, timestamp }
+    const MAX_SPOTS = 2000;
+
+    const countryGrid = document.getElementById('countryGrid');
+    const feedList = document.getElementById('feedList');
+    const emptyState = document.getElementById('emptyState');
+    const statusDot = document.getElementById('statusDot');
+    const statusText = document.getElementById('statusText');
+    const voiceMode = document.getElementById('voiceMode');
+    const srAnnounce = document.getElementById('srAnnounce');
+
+    // --- Speech / Accessibility ---
+    const speechQueue = [];
+    let speechBusy = false;
+
+    function speak(text) {
+      speechQueue.push(text);
+      if (!speechBusy) drainSpeechQueue();
+    }
+
+    let drainTimer = null;
+
+    function drainSpeechQueue() {
+      if (drainTimer) { clearTimeout(drainTimer); drainTimer = null; }
+      if (speechQueue.length === 0) { speechBusy = false; return; }
+      speechBusy = true;
+      const text = speechQueue.shift();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.2;
+      utterance.pitch = 1.0;
+      let settled = false;
+      const next = () => {
+        if (settled) return;
+        settled = true;
+        drainSpeechQueue();
+      };
+      utterance.onend = next;
+      utterance.onerror = next;
+      speechSynthesis.resume();
+      speechSynthesis.speak(utterance);
+      // Safety timeout in case onend/onerror never fire
+      drainTimer = setTimeout(() => {
+        if (!settled) {
+          speechSynthesis.cancel(); // will trigger onerror -> next()
+        }
+      }, 10000);
+    }
+
+    setInterval(() => {
+      if (speechSynthesis.paused) speechSynthesis.resume();
+    }, 5000);
+
+    document.getElementById('testVoice').addEventListener('click', () => {
+      announceCountry('Japan', 'JA1XYZ', 'FT8', '20m', 'PM95');
+    });
+
+    const savedVoiceMode = localStorage.getItem('voiceMode');
+    if (savedVoiceMode) {
+      voiceMode.value = savedVoiceMode;
+    }
+    // Browsers block speechSynthesis until a user gesture; unlock on first interaction
+    if (voiceMode.value === 'self-voice') {
+      const unlockSpeech = () => {
+        speak('Voice enabled');
+        document.removeEventListener('click', unlockSpeech);
+        document.removeEventListener('keydown', unlockSpeech);
+      };
+      document.addEventListener('click', unlockSpeech);
+      document.addEventListener('keydown', unlockSpeech);
+    }
+    voiceMode.addEventListener('change', () => {
+      localStorage.setItem('voiceMode', voiceMode.value);
+      if (voiceMode.value === 'self-voice') {
+        speak('Voice enabled');
+      }
+    });
+
+    function announceCountry(country, callsign, spotMode, band, grid) {
+      const mode = voiceMode.value;
+      let text = `New country: ${country}`;
+      if (spotMode) text += ` on ${spotMode}`;
+      if (band) text += ` ${band.replace('m', ' meters')}`;
+      if (grid && !SKIP_DIST.includes(country)) {
+        const myPos = gridToLatLon(qthInput.value);
+        const spotPos = gridToLatLon(grid);
+        if (myPos && spotPos) {
+          const km = haversineKm(myPos.lat, myPos.lon, spotPos.lat, spotPos.lon);
+          if (km > 0) text += `, ${speakDist(km)}`;
+        }
+      }
+      if (mode === 'self-voice') {
+        speak(text);
+      } else if (mode === 'screen-reader') {
+        srAnnounce.textContent = '';
+        setTimeout(() => { srAnnounce.textContent = text; }, 100);
+      }
+    }
+
+    // --- Display rebuild from stored spots ---
+    function rebuildDisplay() {
+      // Clear display
+      countryGrid.innerHTML = '';
+      feedList.innerHTML = '';
+
+      const countries = new Map();
+      const callsigns = new Set();
+      let spotCount = 0;
+      const modeCounts = new Map();
+
+      // Replay all stored spots through the filter
+      for (const spot of allSpots) {
+        if (!passesFilter(spot)) continue;
+        spotCount++;
+        callsigns.add(spot.callsign);
+        modeCounts.set(spot.category, (modeCounts.get(spot.category) || 0) + 1);
+
+        const existing = countries.get(spot.country);
+        if (existing) {
+          existing.count++;
+          existing.lastSeen = spot.timestamp;
+          if (!existing.callsignModes.has(spot.callsign)) {
+            existing.callsignModes.set(spot.callsign, new Set());
+          }
+          existing.callsignModes.get(spot.callsign).add(spot.mode);
+          if (spot.band) existing.bands.add(spot.band);
+        } else {
+          const cm = new Map();
+          cm.set(spot.callsign, new Set([spot.mode]));
+          countries.set(spot.country, {
+            count: 1,
+            lastSeen: spot.timestamp,
+            callsignModes: cm,
+            bands: new Set(spot.band ? [spot.band] : []),
+          });
+        }
+      }
+
+      // Sort country cards based on selected sort mode
+      const currentSort = sortMode.value;
+      const myPos = gridToLatLon(qthInput.value);
+      let sorted;
+
+      const isDistSort = (currentSort === 'distance' || currentSort === 'closest');
+
+      sorted = [...countries.entries()].map(([name, data]) => {
+        return [name, data, myPos ? countryDist(data) : -1];
+      });
+
+      if (isDistSort && myPos) {
+        if (currentSort === 'distance') {
+          sorted.sort((a, b) => b[2] - a[2]); // most distant first
+        } else {
+          // closest: positive distances first ascending, then unknowns (-1) at end
+          sorted.sort((a, b) => {
+            if (a[2] < 0 && b[2] < 0) return 0;
+            if (a[2] < 0) return 1;
+            if (b[2] < 0) return -1;
+            return a[2] - b[2];
+          });
+        }
+      } else if (currentSort === 'spots') {
+        sorted.sort((a, b) => a[1].callsignModes.size - b[1].callsignModes.size);
+      } else if (currentSort === 'mostspots') {
+        sorted.sort((a, b) => b[1].callsignModes.size - a[1].callsignModes.size);
+      } else {
+        sorted.sort((a, b) => a[0].localeCompare(b[0]));
+      }
+
+      if (sorted.length === 0) {
+        countryGrid.innerHTML = `<div class="empty-state"><h3>No spots for selected modes</h3><p>Toggle modes above or wait for new spots</p></div>`;
+      }
+      for (const [name, data, dist] of sorted) {
+        const card = document.createElement('div');
+        card.className = 'country-card';
+        card.id = 'country-' + name.replace(/[^a-zA-Z0-9]/g, '_');
+        card.setAttribute('tabindex', '0');
+        const skipDist = SKIP_DIST.includes(name);
+        const modes = uniqueModes(data.callsignModes);
+        const bands = formatBands(data.bands);
+        const distLabel = (dist > 0 && !skipDist)
+          ? ` <span class="count">${formatDist(dist)}</span>` : '';
+        card.setAttribute('aria-label', `${name}, ${modes.text}${bands.speech ? ', ' + bands.speech : ''}${!skipDist && dist > 0 ? ', ' + speakDist(dist) : ''}`);
+        card.innerHTML = `
+          <div aria-hidden="true">
+            <div class="name">${esc(name)} <span class="count">${data.callsignModes.size}</span>${distLabel}</div>
+            <div class="card-body">
+              <div class="card-main">
+                <div class="callsign-list">${renderCallsignModes(data.callsignModes)}</div>
+              </div>
+              ${bands.html ? `<div class="band-col">${bands.html}</div>` : ''}
+            </div>
+          </div>
+        `;
+        countryGrid.appendChild(card);
+      }
+
+      // Render feed (most recent first, limit 200)
+      const filtered = allSpots.filter(s => passesFilter(s));
+      const recent = filtered.slice(-200).reverse();
+      for (const spot of recent) {
+        feedList.appendChild(makeFeedItem(spot));
+      }
+
+      // Update stats
+      document.getElementById('countryCount').textContent = countries.size;
+      document.getElementById('callsignCount').textContent = callsigns.size;
+      document.getElementById('spotCount').textContent = spotCount;
+      renderModeTotals(modeCounts);
+    }
+
+    // Space out callsigns so screen readers spell them instead of pronouncing as words
+    function spaceCall(s) { return s.split('').join(' '); }
+
+    function esc(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    // Collect unique mode names from a callsignModes map for aria-label
+    function uniqueModes(callsignModes) {
+      const modes = new Set();
+      for (const modeSet of callsignModes.values()) {
+        for (const m of modeSet) modes.add(m);
+      }
+      const list = [...modes];
+      return { count: list.length, label: list.length === 1 ? '1 mode' : list.length + ' modes', text: list.join(', ') };
+    }
+
+    // Format bands set for display and speech, sorted by frequency order
+    function formatBands(bands) {
+      if (!bands || bands.size === 0) return { html: '', speech: '' };
+      const sorted = [...bands].sort((a, b) => ALL_BANDS.indexOf(a) - ALL_BANDS.indexOf(b));
+      const html = sorted.map(b => `<span class="band-pill">${b}</span>`).join('');
+      const speech = sorted.map(b => b.replace('m', ' meters')).join(', ');
+      return { html, speech };
+    }
+
+    function modePillClass(mode) {
+      const cat = categorizeMode(mode).toLowerCase();
+      return 'mode-pill mode-' + cat;
+    }
+
+    function renderCallsignModes(callsignModes) {
+      // Group callsigns by their primary mode category, track popularity
+      const byCategory = new Map(); // category -> [callsign, ...]
+      for (const [call, modes] of callsignModes) {
+        for (const m of modes) {
+          const cat = categorizeMode(m);
+          if (!byCategory.has(cat)) byCategory.set(cat, []);
+          byCategory.get(cat).push({ call, mode: m });
+        }
+      }
+
+      // Sort categories by popularity (most callsigns first)
+      const sortedCats = [...byCategory.entries()].sort((a, b) => b[1].length - a[1].length);
+
+      // Pick 3 entries: one from each top mode, fill remainder from most popular
+      const picked = [];
+      const usedCalls = new Set();
+      for (const [cat, calls] of sortedCats) {
+        if (picked.length >= 3) break;
+        // Pick the most recent (last) unused callsign from this category
+        for (let i = calls.length - 1; i >= 0; i--) {
+          if (!usedCalls.has(calls[i].call)) {
+            picked.push(calls[i]);
+            usedCalls.add(calls[i].call);
+            break;
+          }
+        }
+      }
+
+      // If fewer than 3, fill from the most popular category
+      if (picked.length < 3 && sortedCats.length > 0) {
+        const topCalls = sortedCats[0][1];
+        for (let i = topCalls.length - 1; i >= 0 && picked.length < 3; i--) {
+          if (!usedCalls.has(topCalls[i].call)) {
+            picked.push(topCalls[i]);
+            usedCalls.add(topCalls[i].call);
+          }
+        }
+      }
+
+      const totalCallsigns = callsignModes.size;
+      return picked.map(({ call, mode }, i) => {
+        const pill = `<span class="${modePillClass(mode)}">${esc(mode)}</span>`;
+        const ellipsis = (i === picked.length - 1 && totalCallsigns > 3)
+          ? `<span style="color:#556688; margin-left:4px">...</span>` : '';
+        return `<div class="callsign-entry"><span class="call" aria-label="${spaceCall(call)}">${esc(call)}</span>${pill}${ellipsis}</div>`;
+      }).join('');
+    }
+
+    function makeFeedItem(spot) {
+      const time = new Date(spot.timestamp).toLocaleTimeString();
+      const item = document.createElement('div');
+      item.className = 'feed-item';
+      item.setAttribute('role', 'article');
+      item.setAttribute('tabindex', '-1');
+      item.setAttribute('aria-label', `${spaceCall(spot.callsign)} in ${spot.country}, ${spot.mode}${spot.band ? ' on ' + spot.band : ''}`);
+      item.innerHTML = `
+        <div class="time">${time}</div>
+        <div class="content">
+          <span class="callsign">${esc(spot.callsign)}</span> &rarr;
+          <span class="country-name">${esc(spot.country)}</span>
+          <span class="mode-tag">${esc(spot.mode)}</span>
+        </div>
+        ${spot.message ? `<div class="message">${esc(spot.message)}</div>` : ''}
+      `;
+      return item;
+    }
+
+    // --- Mode totals rendering ---
+    function renderModeTotals(modeCounts) {
+      const el = document.getElementById('modeTotals');
+      const parts = [];
+      for (const mode of activeModes) {
+        const count = modeCounts.get(mode) || 0;
+        if (count > 0) {
+          parts.push(`<span class="mode-total">${mode}: <strong>${count}</strong></span>`);
+        }
+      }
+      el.innerHTML = parts.join('');
+    }
+
+    // --- Screen-freeze while navigating (accessibility) ---
+    // When voice/screen-reader mode is active and the user is navigating
+    // the country grid, freeze DOM updates for 10 seconds after the last
+    // cursor movement so the screen reader can read cards undisturbed.
+    let lastGridNav = 0;
+    let freezeTimer = null;
+    let freezeSuppressed = false; // prevents focus-restore from retriggering freeze
+    let pendingNewCountries = []; // { country, callsign, mode, band } for deferred announcements
+    const FREEZE_MS = 10000;
+
+    function isScreenFrozen() {
+      if (voiceMode.value === 'off') return false;
+      return (Date.now() - lastGridNav) < FREEZE_MS;
+    }
+
+    function resetFreezeTimer() {
+      lastGridNav = Date.now();
+      if (freezeTimer) clearTimeout(freezeTimer);
+      freezeTimer = setTimeout(() => {
+        // Freeze expired — catch up
+        freezeSuppressed = true;
+        rebuildDisplay();
+        freezeSuppressed = false;
+        // Announce any new countries that arrived during freeze
+        for (const nc of pendingNewCountries) {
+          announceCountry(nc.country, nc.callsign, nc.mode, nc.band, nc.grid);
+        }
+        pendingNewCountries = [];
+      }, FREEZE_MS);
+    }
+
+    // Use document-level capture-phase listeners for reliable detection
+    // (screen readers can intercept events before they bubble)
+    document.addEventListener('keydown', (e) => {
+      if (!freezeSuppressed && voiceMode.value !== 'off' && countryGrid.contains(e.target)) {
+        resetFreezeTimer();
+      }
+    }, true);
+
+    document.addEventListener('focusin', (e) => {
+      if (!freezeSuppressed && voiceMode.value !== 'off' && countryGrid.contains(e.target)) {
+        resetFreezeTimer();
+      }
+    }, true);
+
+    // --- Incremental update (new spot arrives) ---
+    // Track current filtered state for incremental updates
+    const currentCountries = new Map();
+    const currentCallsigns = new Set();
+    let currentSpotCount = 0;
+    const currentModeCounts = new Map();
+
+    function handleNewSpot(spot) {
+      // Store
+      allSpots.push(spot);
+      if (allSpots.length > MAX_SPOTS) allSpots.shift();
+
+      // Track grid per callsign
+      if (spot.grid) callsignGrids.set(spot.callsign, spot.grid);
+
+      // Check filter
+      if (!passesFilter(spot)) return;
+
+      currentSpotCount++;
+      currentCallsigns.add(spot.callsign);
+      currentModeCounts.set(spot.category, (currentModeCounts.get(spot.category) || 0) + 1);
+
+      const isNewCountry = !currentCountries.has(spot.country);
+      const existing = currentCountries.get(spot.country) || { count: 0, callsignModes: new Map(), bands: new Set() };
+      existing.count++;
+      existing.lastSeen = spot.timestamp;
+      if (!existing.callsignModes.has(spot.callsign)) {
+        existing.callsignModes.set(spot.callsign, new Set());
+      }
+      existing.callsignModes.get(spot.callsign).add(spot.mode);
+      if (spot.band) existing.bands.add(spot.band);
+      currentCountries.set(spot.country, existing);
+
+      // If screen is frozen for accessibility, defer DOM updates
+      if (isScreenFrozen()) {
+        if (isNewCountry) {
+          pendingNewCountries.push({ country: spot.country, callsign: spot.callsign, mode: spot.mode, band: spot.band, grid: spot.grid });
+        }
+        return;
+      }
+
+      // Update country card
+      renderCountryCard(spot.country, existing, true);
+
+      // Add feed item
+      const item = makeFeedItem(spot);
+      feedList.insertBefore(item, feedList.firstChild);
+      while (feedList.children.length > 200) {
+        feedList.removeChild(feedList.lastChild);
+      }
+
+      // Update stats
+      document.getElementById('countryCount').textContent = currentCountries.size;
+      document.getElementById('callsignCount').textContent = currentCallsigns.size;
+      document.getElementById('spotCount').textContent = currentSpotCount;
+      renderModeTotals(currentModeCounts);
+
+      // Announce new country
+      if (isNewCountry) {
+        announceCountry(spot.country, spot.callsign, spot.mode, spot.band, spot.grid);
+      }
+    }
+
+    // Re-sort country cards in-place without destroying DOM elements (preserves focus)
+    function resortGridInPlace() {
+      // If the user has focus on a card, don't move any DOM nodes — appendChild
+      // detaches and reattaches nodes, which causes screen readers to lose their
+      // virtual cursor and re-read from the top of the page. The sort order will
+      // be corrected on the next full rebuild (filter change, freeze expiry, etc).
+      const focused = document.activeElement;
+      if (focused && focused !== countryGrid && countryGrid.contains(focused)) return;
+
+      const cards = [...countryGrid.querySelectorAll('.country-card')];
+      if (cards.length === 0) return;
+
+      const currentSort = sortMode.value;
+      const myPos = gridToLatLon(qthInput.value);
+
+      function getCardName(card) {
+        const n = card.querySelector('.name');
+        return n ? n.textContent.replace(/\d+.*$/, '').trim() : '';
+      }
+
+      function getCardCallsignCount(card) {
+        const countEl = card.querySelector('.count');
+        return countEl ? parseInt(countEl.textContent) || 0 : 0;
+      }
+
+      function getCardDist(card) {
+        const name = getCardName(card);
+        const data = currentCountries.get(name);
+        if (!data || !myPos) return -1;
+        let totalDist = 0, gridCount = 0;
+        for (const call of data.callsignModes.keys()) {
+          const g = callsignGrids.get(call);
+          if (g) {
+            const pos = gridToLatLon(g);
+            if (pos) {
+              totalDist += haversineKm(myPos.lat, myPos.lon, pos.lat, pos.lon);
+              gridCount++;
+            }
+          }
+        }
+        return gridCount > 0 ? totalDist / gridCount : -1;
+      }
+
+      cards.sort((a, b) => {
+        if (currentSort === 'spots') {
+          return getCardCallsignCount(a) - getCardCallsignCount(b);
+        } else if (currentSort === 'mostspots') {
+          return getCardCallsignCount(b) - getCardCallsignCount(a);
+        } else if (currentSort === 'distance') {
+          return getCardDist(b) - getCardDist(a);
+        } else if (currentSort === 'closest') {
+          const da = getCardDist(a), db = getCardDist(b);
+          if (da < 0 && db < 0) return 0;
+          if (da < 0) return 1;
+          if (db < 0) return -1;
+          return da - db;
+        } else {
+          return getCardName(a).localeCompare(getCardName(b));
+        }
+      });
+
+      // Re-append in sorted order (moves existing nodes, preserves focus)
+      for (const card of cards) {
+        countryGrid.appendChild(card);
+      }
+    }
+
+    function renderCountryCard(name, data, highlight) {
+      const id = 'country-' + name.replace(/[^a-zA-Z0-9]/g, '_');
+      const skipDist = SKIP_DIST.includes(name);
+      const dist = skipDist ? -1 : countryDist(data);
+      const distLabel = (dist > 0)
+        ? ` <span class="count">${formatDist(dist)}</span>` : '';
+      const bands = formatBands(data.bands);
+
+      const existingEl = document.getElementById(id);
+      if (existingEl) {
+        // Don't update a card the user is currently focused on — changing
+        // innerHTML or aria-label on the focused element causes screen readers
+        // to re-announce it (and sometimes re-read the entire page context).
+        if (existingEl !== document.activeElement) {
+          existingEl.querySelector('.name').innerHTML = `${esc(name)} <span class="count">${data.callsignModes.size}</span>${distLabel}`;
+          existingEl.querySelector('.callsign-list').innerHTML = renderCallsignModes(data.callsignModes);
+          const bandCol = existingEl.querySelector('.band-col');
+          if (bandCol) bandCol.innerHTML = bands.html;
+          else if (bands.html) {
+            const col = document.createElement('div');
+            col.className = 'band-col';
+            col.innerHTML = bands.html;
+            existingEl.querySelector('.card-body').appendChild(col);
+          }
+          const modes = uniqueModes(data.callsignModes);
+          existingEl.setAttribute('aria-label', `${name}, ${modes.text}${bands.speech ? ', ' + bands.speech : ''}${dist > 0 ? ', ' + speakDist(dist) : ''}`);
+        }
+        if (highlight) {
+          existingEl.classList.add('highlight');
+          setTimeout(() => existingEl.classList.remove('highlight'), 2000);
+        }
+        return;
+      }
+
+      // Remove empty state
+      const empty = countryGrid.querySelector('.empty-state');
+      if (empty) empty.remove();
+
+      const card = document.createElement('div');
+      card.className = 'country-card' + (highlight ? ' highlight' : '');
+      card.id = id;
+      card.setAttribute('tabindex', '0');
+      const modes = uniqueModes(data.callsignModes);
+      card.setAttribute('aria-label', `${name}, ${modes.text}${bands.speech ? ', ' + bands.speech : ''}${dist > 0 ? ', ' + speakDist(dist) : ''}`);
+      card.innerHTML = `
+        <div aria-hidden="true">
+          <div class="name">${esc(name)} <span class="count">${data.callsignModes.size}</span>${distLabel}</div>
+          <div class="card-body">
+            <div class="card-main">
+              <div class="callsign-list">${renderCallsignModes(data.callsignModes)}</div>
+            </div>
+            ${bands.html ? `<div class="band-col">${bands.html}</div>` : ''}
+          </div>
+        </div>
+      `;
+
+      if (sortMode.value === 'alpha') {
+        // Insert alphabetically without rebuild
+        const cards = [...countryGrid.children];
+        const insertBefore = cards.find(c => {
+          const n = c.querySelector('.name');
+          return n && n.textContent > name;
+        });
+        if (insertBefore) {
+          countryGrid.insertBefore(card, insertBefore);
+        } else {
+          countryGrid.appendChild(card);
+        }
+      } else {
+        // Non-alpha sorts: append the card, then re-sort existing cards in place
+        // This avoids innerHTML nuke which destroys focus
+        countryGrid.appendChild(card);
+        resortGridInPlace();
+      }
+
+      if (highlight) {
+        setTimeout(() => card.classList.remove('highlight'), 2000);
+      }
+    }
+
+    // When mode filters change, do a full rebuild and reset incremental state
+    const origRebuild = rebuildDisplay;
+    // Make grid focusable so we can park focus there during rebuilds
+    countryGrid.setAttribute('tabindex', '-1');
+    rebuildDisplay = function() {
+      // Preserve focus across rebuild
+      const focused = document.activeElement;
+      const focusId = (focused && countryGrid.contains(focused)) ? focused.id : null;
+
+      // Park focus on the grid container and mark busy so the screen reader
+      // doesn't wander into the feed panel while cards are being rebuilt
+      if (focusId) countryGrid.focus({ preventScroll: true });
+      countryGrid.setAttribute('aria-busy', 'true');
+
+      origRebuild();
+      // Reset incremental tracking to match rebuilt state
+      currentCountries.clear();
+      currentCallsigns.clear();
+      currentSpotCount = 0;
+      currentModeCounts.clear();
+      callsignGrids.clear();
+      for (const spot of allSpots) {
+        if (spot.grid) callsignGrids.set(spot.callsign, spot.grid);
+        if (!passesFilter(spot)) continue;
+        currentSpotCount++;
+        currentCallsigns.add(spot.callsign);
+        currentModeCounts.set(spot.category, (currentModeCounts.get(spot.category) || 0) + 1);
+        const ex = currentCountries.get(spot.country) || { count: 0, callsignModes: new Map(), bands: new Set() };
+        ex.count++;
+        ex.lastSeen = spot.timestamp;
+        if (!ex.callsignModes.has(spot.callsign)) {
+          ex.callsignModes.set(spot.callsign, new Set());
+        }
+        ex.callsignModes.get(spot.callsign).add(spot.mode);
+        if (spot.band) ex.bands.add(spot.band);
+        currentCountries.set(spot.country, ex);
+      }
+
+      countryGrid.removeAttribute('aria-busy');
+
+      // Restore focus to the same card
+      if (focusId) {
+        const el = document.getElementById(focusId);
+        if (el) el.focus();
+      }
+    };
+
+    // --- WebSocket connection ---
+    function connect() {
+      const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const url = `${proto}//${location.host}`;
+      const ws = new WebSocket(url);
+
+      ws.onopen = () => {
+        statusDot.classList.add('connected');
+        statusText.textContent = 'Connected';
+      };
+
+      ws.onclose = () => {
+        statusDot.classList.remove('connected');
+        statusText.textContent = 'Disconnected - reconnecting...';
+        setTimeout(connect, 2000);
+      };
+
+      ws.onerror = () => {
+        ws.close();
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+
+        if (data.type === 'spot') {
+          const category = categorizeMode(data.mode);
+          handleNewSpot({
+            callsign: data.callsign,
+            country: data.country,
+            mode: data.mode,
+            category,
+            band: data.band || '',
+            grid: data.grid || '',
+            message: data.message,
+            timestamp: data.timestamp,
+          });
+        }
+      };
+    }
+
+    // Ctrl+S: focus first country card
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        const first = countryGrid.querySelector('.country-card');
+        if (first) first.focus();
+      }
+    });
+
+    connect();
+  </script>
+</body>
+</html>
